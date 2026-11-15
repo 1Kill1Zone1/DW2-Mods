@@ -38,7 +38,7 @@ public static class ConstructionGraph
                 return Reject("Target design is missing or obsolete.");
             if (targetClassId != null && !(staged??current).Classes.ContainsKey(targetClassId)) return Reject("Selected Construction Series no longer exists.");
 
-            var next = (staged??current).Clone();next.Version=2;
+            var next = (staged??current).Clone();next.Version=ConstructionSnapshot.CurrentVersion;
             next.Validate();
             if(current.Classes.Keys.Any(id=>!next.Classes.ContainsKey(id)))return Reject("Deleting a series is not supported.");
             if(next.DesignClasses.Keys.Where(id=>current.DesignClasses.GetValueOrDefault(id)!=next.DesignClasses[id]).Any(id=>!facts.TryGetValue(id,out var f)||f.EmpireId!=target.EmpireId))return Reject("Only current own projects can be transferred.");
@@ -80,7 +80,7 @@ public static class ConstructionGraph
                 if(current.Targets.GetValueOrDefault(pin.Key,Disabled)!=pin.Value)active.Add(pin.Value);
             }
             if(active.Any(id=>!facts.TryGetValue(id,out var f)||f.EmpireId!=target.EmpireId||!f.Buildable))return Reject("A target cannot be reactivated with current hulls/components.");
-            if(target.Obsolete&&!active.Contains(targetDesignId)&&current.DesignClasses.GetValueOrDefault(targetDesignId)==next.DesignClasses.GetValueOrDefault(targetDesignId))return Reject("Target design is obsolete; choose it as the series target to reactivate it.");
+            if(target.Obsolete&&!active.Contains(targetDesignId)&&current.DesignClasses.GetValueOrDefault(targetDesignId)==next.DesignClasses.GetValueOrDefault(targetDesignId))return Reject("Current project is obsolete. Open an active project to edit sources, or choose this current project as the series target to reactivate it.");
             next.Validate();
             return new(true, null, next, paths,active.Where(id=>facts[id].Obsolete).ToDictionary(id=>id,_=>false));
         }

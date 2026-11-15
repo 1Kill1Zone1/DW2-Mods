@@ -91,6 +91,41 @@ internal static partial class Checks
                 AccessTools.Method(typeof(ShipDesignRenderer),"SaveClick").CreateDelegate<EventHandler<DWEventArgs>>(renderer),false);
             button.Visible=true;root.AddControl(button);ClickAt(button);
         }
+        void ObsoleteSourceStatusChecks()
+        {
+            var registry=ConstructionCampaigns.Get(galaxy,empire);Require(registry.TryGet(empire,out var saved,out _),"obsolete-source fixture reads metadata");
+            var state=saved.Clone();string series=state.DesignClasses[h1.DesignId];state.DesignClasses[h2.DesignId]=series;
+            state.Targets[ConstructionSnapshot.TargetKey(series,(int)h1.GetRole(galaxy))]=h2.DesignId;
+            bool sourceFlag=h1.Obsolete,targetFlag=h2.Obsolete;h1.Obsolete=true;h2.Obsolete=false;
+            Require(registry.TryRestore(empire,state,out _),"obsolete source with active pinned target fixture prepared");
+            try
+            {
+                foreach(var draft in new[]{h1,h1.Clone(galaxy)})
+                {
+                    var r=Renderer(draft,componentsEditable:false);var p=Panel(r);
+                    try
+                    {
+                        string actual=((DWLabel)p.Controls.Single(c=>c.Name=="ACM.SeriesTarget")).Text;
+                        Console.WriteLine("OBSOLETE-SOURCE-DIAGNOSTIC source="+h1.Name+" target="+h2.Name+" targetObsolete="+h2.Obsolete+" text="+actual);
+                        Require(actual==h2.Name,"obsolete current project displays active series destination, not its own obsolete flag");
+                        Require(h1.Obsolete&&!h2.Obsolete&&Serialized(Read(Storage(galaxy,empire.EmpireId))!)==Serialized(state),"reading obsolete source leaves both flags and series target unchanged");
+                    }
+                    finally{DesignerIntegration.CloseEditor(r);UserInterfaceController.RemoveCustomControl(p);}
+                }
+                var dialog=new DesignsDialog();dialog.BindGalaxy(galaxy,empire);var hull=h1.GetShipHull(galaxy);
+                bool wasAuto=empire.Policy.GetShipDesignAutomationByHull(hull.Role,hull.Level);
+                try
+                {
+                    AccessTools.Method(typeof(DesignsDialog),"DesignsListItemClicked").Invoke(dialog,[h1,"AutoDesignRole",new Vector2(),true,false,null!,null!,new List<IListDrawable>()]);
+                    var after=Read(Storage(galaxy,empire.EmpireId))!;
+                    Require(empire.Policy.GetShipDesignAutomationByHull(hull.Role,hull.Level)==wasAuto&&SeriesAutomation.Mode(galaxy,empire,h1,after)!=SeriesAutomation.Mode(galaxy,empire,h1,state),"classified Hull Upgrade click changes the series mode without changing shared native hull policy");
+                    Require(h1.Obsolete&&!h2.Obsolete&&after.Targets.OrderBy(p=>p.Key).SequenceEqual(state.Targets.OrderBy(p=>p.Key))&&h1.ResolveRetrofitDesignId(galaxy,empire)==h2.DesignId,"Hull Upgrade series-mode click alone changes neither obsolete flags nor explicit series destination");
+                }
+                finally{empire.Policy.SetShipDesignAutomationByHull(hull.Role,hull.Level,wasAuto);}
+            }
+            finally{h1.Obsolete=sourceFlag;h2.Obsolete=targetFlag;Require(registry.TryRestore(empire,saved,out _),"obsolete-source fixture restores original metadata");}
+        }
+        ObsoleteSourceStatusChecks();
         int originalWidth=UserInterfaceController.ScreenWidth,originalHeight=UserInterfaceController.ScreenHeight;
         try
         {

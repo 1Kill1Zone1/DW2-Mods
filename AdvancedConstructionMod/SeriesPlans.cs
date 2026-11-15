@@ -18,7 +18,7 @@ public static class SeriesPlans
         if(ids.All(id=>current.DesignClasses.GetValueOrDefault(id)==destination))throw new ArgumentException("These projects already belong to the destination series.");
         var byId=facts.ToDictionary(f=>f.DesignId);
         if(ids.Any(id=>!byId.ContainsKey(id)))throw new ArgumentException("A transferred project no longer exists.");
-        var next=current.Clone();next.Version=2;
+        var next=current.Clone();next.Version=ConstructionSnapshot.CurrentVersion;
         foreach(int role in ids.Select(id=>byId[id].Role).Distinct())
         {
             string key=ConstructionSnapshot.TargetKey(destination,role);

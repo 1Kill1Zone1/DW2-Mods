@@ -1,17 +1,28 @@
-# Testing Advanced Construction Mod 0.3.0
+# Testing Advanced Construction Mod 0.4.0
 
 ## Requirements and installation
 
 Use Distant Worlds 2 Steam beta **1.3.8.7**, DW2 Mod Launcher, and Positronic Matrix. The tested DistantWorlds.Types.dll SHA-256 is `787E4A1B6DA8763943A18DED8E3DC29BB452BA34297CEA2E726E5951B4F3B254`.
 
-1. Close the game and launcher. Retain the previous ACM files and a separate pre-0.3 campaign save.
-2. Download the ACM 0.3.0 ZIP from this repository's Releases and extract it into the game directory. It contains `mods/AdvancedConstructionMod/`.
+1. Close the game and launcher. Retain the previous ACM files and a separate pre-0.4 campaign save.
+2. Download the ACM 0.4.0 ZIP from this repository's Releases and extract it into the game directory. It contains `mods/AdvancedConstructionMod/`.
 3. In DW2 Mod Launcher, enable Positronic Matrix and Advanced Construction Mod; load Matrix before ACM. Launch through the launcher.
 4. Use a separate test save slot.
 
-**Save compatibility:** ACM 0.3 writes version-2 series metadata after an ACM edit. ACM 0.2.2 cannot read that metadata. Reverting DLLs alone does not downgrade a campaign; retain the pre-0.3 save.
+**Save compatibility:** ACM 0.4 reads version-1/2 metadata and initializes independent modes as version 3. ACM 0.3.x cannot read version 3. Reverting DLL files alone does not downgrade the campaign; retain a separate pre-0.4 save. Existing obsolete targets are not silently repaired: select the intended active project explicitly.
 
 ## Manual acceptance
+
+### New in 0.4.0: independent automatic upgrades
+
+- Assign two Escort projects to different Series, e.g. Xura and Little Devourer. Set Xura Hull Upgrade to Automatic and Devourer to Manual: the other Series must not toggle. Ensure global ship-design automation is Automatic.
+- Research an improvement to an installed component within its family. The latest active Auto project should produce a classified new generation with the same hull, bay positions, component counts and weapon families. Manual Devourer stays unchanged. Hull changes remain manual; targeting equipment is not inserted in place of a scanner.
+- With no safe improvement, expect no extra project. Hover Hull Upgrade for the reason. Repeated design reviews must not create duplicates.
+- An upgraded explicit target advances to its new version. If a different older target is pinned, it remains pinned. Automatic latest follows the new version; No target, disabled paths and native auto-Retrofit permission stay intact. No ships are immediately sent to a yard.
+- Existing Retrofit missions/queues must be retained; conflicting automatic publication waits. Save/reload and confirm Series membership, independent modes, targets and slot layout.
+- Compare an obsolete current project's display with its active target. Transfer controls should clearly distinguish receiving Series, projects left behind and incoming projects.
+
+### Editor, targets, transfers and persistence
 
 - Open an existing design and Upgrade it. Enter/confirm a series inline; test OK, dropdown, Edit sources, Cancel and Save and Exit.
 - Keep Hura and Little Devourer in separate series. Confirm ordinary Retrofit stays within the intended series and native disabled paths remain disabled.
@@ -26,11 +37,11 @@ Please report game and mod versions, relevant dependency versions, steps, expect
 
 ## Automated verification and limits
 
-The exact supplied runtime passed **499 domain/native assertions**, with zero compiler warnings/errors. Coverage includes actual native Save/Upgrade/Copy, migration, Matrix fault injection, stale/retry/cancel/concurrency, mission/waiting/active-yard guards and native campaign save/load. Integration cases use Ship Logistics 1.0.40, Freight Dispatch 0.2.4 and Refreshed Shipset Colors 1.1.0.
+The exact supplied runtime passed **559 domain/native assertions**, with zero compiler warnings/errors. Coverage includes actual native CreateShipDesigns, UpgradeComponents, independent modes and global policy, exact bay retention, no-op reviews, schema2-to-3 initialization, older pins, No target/disabled paths, queued-refit refusal, Matrix and post-commit cache rollback, plus prior Save/Upgrade/Copy, transfers, stale/retry/cancel/concurrency, mission/waiting/active-yard guards and native campaign save/load. Integration cases use Ship Logistics 1.0.40, Freight Dispatch 0.2.4 and Refreshed Shipset Colors 1.1.0.
 
 These checks use isolated fixtures, test font metrics and GPU presentation stubs. They do not establish live rendering, fleet movement or gameplay FPS. The original campaign fixture is not distributed; native checks require a compatible disposable fixture and the relevant installed dependencies.
 
-Known native Save boundary: if the game publishes a new component design and the later ACM metadata commit fails, that new project may remain saved without a series. ACM reports the failure and preserves the previous series/target/path group. Full native component-publication rollback is not claimed.
+Known native Save boundary: if the game publishes a new component design and the later ACM metadata commit fails, that new project may remain saved without a series. ACM reports the failure and preserves the previous series/target/path group. Full manual native component-publication rollback is not claimed. The new automatic-publication path separately rolls back the new project, metadata, flags, paths and latest-design caches on a handled failure.
 
 The safe View redesign and per-selected-ship cross-series Retrofit commands are not included.
 

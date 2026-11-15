@@ -65,7 +65,7 @@ internal sealed class ConstructionRegistry
 
     private static bool Same(ConstructionSnapshot left, ConstructionSnapshot right) => left.Version == right.Version &&
         left.Revision == right.Revision && left.Classes.OrderBy(p=>p.Key).SequenceEqual(right.Classes.OrderBy(p=>p.Key)) &&
-        left.DesignClasses.OrderBy(p=>p.Key).SequenceEqual(right.DesignClasses.OrderBy(p=>p.Key))&&left.Targets.OrderBy(p=>p.Key).SequenceEqual(right.Targets.OrderBy(p=>p.Key));
+        left.DesignClasses.OrderBy(p=>p.Key).SequenceEqual(right.DesignClasses.OrderBy(p=>p.Key))&&left.Targets.OrderBy(p=>p.Key).SequenceEqual(right.Targets.OrderBy(p=>p.Key))&&left.AutoUpgrade.OrderBy(p=>p.Key).SequenceEqual(right.AutoUpgrade.OrderBy(p=>p.Key));
 
     internal bool TryRestore(Empire empire, ConstructionSnapshot knownGood, out string? error)
     {

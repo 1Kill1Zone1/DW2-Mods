@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.4.0 — 2026-11-15 — independent Series component automation
+
+- Store independent Hull Upgrade Automatic/Manual modes per Series and native role. Initialize old campaigns from native settings without unexpectedly enabling automation; respect global design automation.
+- Upgrade the latest active project using native component selection and researched component levels. Retain hull, component count, bays, layout, tactics and weapon families. Hull changes remain manual; skip unsafe/no-op upgrades with a tooltip reason.
+- Protect classified hulls from native template replacement. Preserve other native hull generation and AI behavior. New versions retain Series, disabled paths and AllowAutoRetrofit; advance only the upgraded explicit target and preserve a different older pin.
+- Refuse conflicting queued retrofits/stale state; roll back metadata, design publication, native arrows/flags and latest-design caches on write or post-commit failure. Repeated reviews create no redundant versions or revisions.
+- Read metadata1/2 and initialize schema3 modes once. Rollback to0.3.x requires the pre0.4 campaign checkpoint. No silent repair of an existing obsolete Series target.
+- Retain0.3.1 current-project wording and guided transfer UI. Serial native/domain, owner-save-copy and FD/Ship Logistics/Shipset Colors verification recorded in the canonical feature card. Live GPU and actual research progression remain owner acceptance.
+
+## 0.3.1 — 2026-11-15 — prepared interface correction
+
+- Display an obsolete current project's actual saved series destination; do not present its edit-validation error as a claim that the selected series target is obsolete. Distinguish Current project in edit warnings.
+- Explain transfer scope with native tooltips, numbered receiving-series/remaining-target/incoming-target steps and contextual picker help. Disable unavailable target actions before a receiving series is chosen; explain empty remaining roles.
+- Keep transfer/target/activation/data rules unchanged. Native Hull Upgrade click is verified to change only the shared role/level policy. Its background template generator is separately reproduced as an unclassified-project/obsolete-target risk and is not fixed in this interface patch; use Manual for classified branches pending the agreed feature planning.
+- 522domain/native assertions passed,0build warnings/errors; exact installed0.3.0 reproduces the misleading obsolete-source message. Real latest save read on a verified copy only; live game and installed files remain untouched during preparation.
+
 ## 0.3.0 — 2026-11-15 — prepared series targets and transfers
 
 - Add Automatic latest, explicit own compatible target and No target per series/native role. Explicit older targets preserve equipment/date; obsolete activation is previewed and committed with the group.

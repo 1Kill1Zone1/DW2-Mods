@@ -13,6 +13,8 @@ internal sealed class TransferWindow:NativeWindow
     private string? destination;
     private readonly DWButton destinationButton,apply;
     private readonly DWButton[] sourceTargets,destinationTargets;
+    private readonly DWButton previousRoles,nextRoles;
+    private readonly DWLabel guidance;
     private readonly NativeTextPager preview;
     private int rolePage;
     internal TransferWindow(EditorSession session,bool wholeSeries,Action changed):base("ACM.Transfer",wholeSeries?"TRANSFER ENTIRE SERIES":"TRANSFER PROJECT",1000,720)
@@ -21,18 +23,22 @@ internal sealed class TransferWindow:NativeWindow
         source=session.ClassId??throw new ArgumentException("Choose a source series first.");
         ids=wholeSeries?session.Classes.DesignClasses.Where(p=>p.Value==source).Select(p=>p.Key).ToArray():[session.Draft.DesignId];
         roles=session.ExpectedFacts.Where(f=>ids.Contains(f.DesignId)).Select(f=>f.Role).Distinct().Order().ToArray();
-        Label("ACM.TransferSource","From: "+session.ClassName+" | "+ids.Length+" project(s). Components and ship orders stay unchanged.",S(12),S(40),Panel.Size.X-S(24),S(38));
-        destinationButton=Button("ACM.TransferDestination","Choose destination series...",S(12),S(82),Panel.Size.X-S(24),ChooseDestination);
+        Label("ACM.TransferSource","Moving from series: "+session.ClassName+" | "+ids.Length+" saved project(s).\n"+(wholeSeries?"All generations move, including obsolete projects.":"Only this project and the ships using it change series."),S(12),S(40),Panel.Size.X-S(24),S(38));
+        destinationButton=Button("ACM.TransferDestination","1. Choose receiving series...",S(12),S(82),Panel.Size.X-S(24),ChooseDestination);
+        float columnWidth=(Panel.Size.X-S(36))/2;
+        Label("ACM.TransferRemainingHelp","2. Projects left behind: their retrofit target",S(12),S(118),columnWidth,S(28));
+        Label("ACM.TransferIncomingHelp","3. Projects being moved: their retrofit target",S(24)+columnWidth,S(118),columnWidth,S(28));
         sourceTargets=new DWButton[2];destinationTargets=new DWButton[2];
         for(int i=0;i<2;i++)
         {
-            int slot=i;float y=S(122+i*36),width=(Panel.Size.X-S(36))/2;
-            sourceTargets[i]=Button("ACM.TransferSourceTarget."+i,"",S(12),y,width,()=>ChooseTarget(slot,false));
-            destinationTargets[i]=Button("ACM.TransferDestinationTarget."+i,"",S(24)+width,y,width,()=>ChooseTarget(slot,true));
+            int slot=i;float y=S(150+i*40);
+            sourceTargets[i]=Button("ACM.TransferSourceTarget."+i,"",S(12),y,columnWidth,()=>ChooseTarget(slot,false),S(32));
+            destinationTargets[i]=Button("ACM.TransferDestinationTarget."+i,"",S(24)+columnWidth,y,columnWidth,()=>ChooseTarget(slot,true),S(32));
         }
-        Button("ACM.TransferRolePrevious","Previous roles",S(12),S(200),S(150),()=>{if(rolePage>0){rolePage--;Bind();}});
-        Button("ACM.TransferRoleNext","Next roles",S(174),S(200),S(150),()=>{if((rolePage+1)*2<roles.Length){rolePage++;Bind();}});
-        preview=new NativeTextPager(this,"ACM.TransferPreview",S(12),S(240),Panel.Size.X-S(24),Math.Max(S(120),Panel.Size.Y-S(370)),S(26));
+        guidance=Label("ACM.TransferGuidance","",S(12),S(232),Panel.Size.X-S(24),S(40));
+        previousRoles=Button("ACM.TransferRolePrevious","Previous roles",S(12),S(276),S(150),()=>{if(rolePage>0){rolePage--;Bind();}});
+        nextRoles=Button("ACM.TransferRoleNext","Next roles",S(174),S(276),S(150),()=>{if((rolePage+1)*2<roles.Length){rolePage++;Bind();}});
+        preview=new NativeTextPager(this,"ACM.TransferPreview",S(12),S(312),Panel.Size.X-S(24),Math.Max(S(100),Panel.Size.Y-S(442)),S(26));
         Status=Label("ACM.TransferStatus","",S(12),Panel.Size.Y-S(118),Panel.Size.X-S(24),S(64));
         apply=Button("ACM.TransferUse","Use transfer plan",Panel.Size.X-S(300),Panel.Size.Y-S(42),S(156),Use);
         Button("ACM.TransferCancel","Cancel",Panel.Size.X-S(132),Panel.Size.Y-S(42),S(120),Close);Bind();
@@ -50,38 +56,52 @@ internal sealed class TransferWindow:NativeWindow
     }
     private void ChooseDestination()
     {
-        _=new SeriesChoiceWindow("DESTINATION SERIES",session.Classes.Classes.Where(p=>p.Key!=source).OrderBy(p=>p.Value,StringComparer.OrdinalIgnoreCase).Select(p=>(p.Value,(Action)(()=>{destination=p.Key;targets.Clear();Bind();}))),Reopen);
+        _=new SeriesChoiceWindow("CHOOSE RECEIVING SERIES",session.Classes.Classes.Where(p=>p.Key!=source).OrderBy(p=>p.Value,StringComparer.OrdinalIgnoreCase).Select(p=>(p.Value,(Action)(()=>{destination=p.Key;targets.Clear();Bind();}))),Reopen,
+            "Choose which existing series receives the projects. This is not a ship-design choice. If the list is empty, create another series in the editor first.");
     }
     private void ChooseTarget(int slot,bool dest)
     {
         int n=rolePage*2+slot;if(destination==null||n>=roles.Length)return;
+        if(!(dest?destinationTargets[slot]:sourceTargets[slot]).Enabled)return;
         try
         {
             var state=Plan(true);int role=roles[n];string series=dest?destination:source,key=ConstructionSnapshot.TargetKey(series,role);
-            _=new SeriesChoiceWindow((dest?"DESTINATION TARGET: ":"REMAINING SOURCE TARGET: ")+session.Classes.Classes[series]+" / "+(ShipRole)role,
-                SeriesChoiceWindow.Targets(session,state,series,role,session.ExpectedFacts,id=>{targets[key]=id;Bind();},!dest,!dest),Reopen);
+            _=new SeriesChoiceWindow((dest?"AFTER MOVE, UPGRADE TO: ":"LEFT BEHIND, UPGRADE TO: ")+session.Classes.Classes[series]+" / "+(ShipRole)role,
+                SeriesChoiceWindow.Targets(session,state,series,role,session.ExpectedFacts,id=>{targets[key]=id;Bind();},!dest,!dest),Reopen,
+                dest?"Choose the project that moved ships will use for future Retrofit. The target is pinned; newer incoming projects will not replace it. No ship is sent to a yard now.":
+                    "Choose the future Retrofit target for projects remaining in the original series. Automatic latest picks the newest compatible active project. No target pauses this series; it does not remove projects.");
         }
         catch(ArgumentException ex){Message(ex.Message,true);}
     }
     private void Bind()
     {
-        destinationButton.Text=destination==null?"Choose destination series...":"To: "+session.Classes.Classes[destination];apply.Enabled=destination!=null;
+        destinationButton.Text=destination==null?"1. Choose receiving series...":"1. Receiving series: "+session.Classes.Classes[destination];apply.Enabled=destination!=null;
+        Tip(destinationButton,"Receiving series","Start here: choose the series that will receive these projects. The buttons below choose ship designs for future Retrofit, not the receiving series.");
+        Tip(apply,"Review before Save","This stages the complete transfer plan and returns to the editor. Save / Apply publishes it; editor Cancel discards it. Ship equipment and current orders do not change.");
+        guidance.Text=destination==null?"First choose the receiving series in step 1 above. Then the two target selectors become available.":
+            "Left: target for projects that stay in "+session.Classes.Classes[source]+". Right: target after joining "+session.Classes.Classes[destination]+". Equipment and orders stay unchanged.";
+        previousRoles.Visible=nextRoles.Visible=roles.Length>2;previousRoles.Enabled=rolePage>0;nextRoles.Enabled=(rolePage+1)*2<roles.Length;
         ConstructionSnapshot? plan=null;
-        try{plan=Plan(true);}catch(ArgumentException ex){Message(ex.Message,true);apply.Enabled=false;}
+        if(destination!=null)try{plan=Plan(true);}catch(ArgumentException ex){Message(ex.Message,true);apply.Enabled=false;}
         for(int i=0;i<2;i++)
         {
             int n=rolePage*2+i;sourceTargets[i].Visible=destinationTargets[i].Visible=n<roles.Length;
             if(n>=roles.Length)continue;int role=roles[n];
+            bool remains=session.ExpectedFacts.Any(f=>f.Role==role&&!ids.Contains(f.DesignId)&&session.Classes.DesignClasses.GetValueOrDefault(f.DesignId)==source);
+            destinationTargets[i].Enabled=destination!=null;sourceTargets[i].Enabled=destination!=null&&remains;
             string Describe(string series)
             {
-                if(plan==null)return "choose destination";
+                if(plan==null)return "choose receiving series first";
                 string key=ConstructionSnapshot.TargetKey(series,role);
-                return plan.Targets.TryGetValue(key,out int id)?id<0?"none":session.Empire.Designs.GetById(id)?.Name??("#"+id):"automatic";
+                return plan.Targets.TryGetValue(key,out int id)?id<0?"No target":session.Empire.Designs.GetById(id)?.Name??("Unavailable #"+id):"Automatic latest";
             }
-            sourceTargets[i].Text="Source "+(ShipRole)role+": "+Describe(source);
-            destinationTargets[i].Text="Destination "+(ShipRole)role+": "+(destination==null?"choose":Describe(destination));
+            string left=(ShipRole)role+": "+(!remains?"No projects remain":Describe(source)),right=(ShipRole)role+": "+(destination==null?"choose receiving series first":Describe(destination));
+            sourceTargets[i].Text=DesignsSeriesColumn.Fit(left,sourceTargets[i].FontNormal,sourceTargets[i].Size.X-S(20));
+            destinationTargets[i].Text=DesignsSeriesColumn.Fit(right,destinationTargets[i].FontNormal,destinationTargets[i].Size.X-S(20));
+            Tip(sourceTargets[i],"Projects left behind",left+"\n"+(!remains?"All projects of this role are being moved; no source target is needed. The empty series is retained.":"Choose a target for projects remaining in "+session.Classes.Classes[source]+". Automatic latest follows the newest compatible active project. No target pauses future Retrofit."));
+            Tip(destinationTargets[i],"Projects being moved",right+"\nChoose the future Retrofit project after joining the receiving series. This does not order immediate Retrofit. Select the receiving series above first.");
         }
-        if(plan==null){preview.SetText("Choose a destination to preview every project and its target.");return;}
+        if(plan==null){preview.SetText("No transfer is staged.\n1. Choose a receiving series above.\n2. Review the targets for projects left behind and projects being moved.\n3. Review every change below, then use the plan. Save / Apply in the editor commits it.");if(destination==null)Message("Step 1 is required. The target buttons below it are unavailable until a receiving series is selected.");return;}
         var before=session.CapturePlan();
         try
         {
@@ -101,6 +121,8 @@ internal sealed class TransferWindow:NativeWindow
         }
         finally{session.RestorePlan(before);}
     }
+    private void Tip(DWControl control,string title,string text)
+    {control.HoverTips.Clear();control.AddHoverTip(title,text,control.CalculateAbsoluteRectangle(),S(440),Side.Right);}
     private void Use()
     {
         if(!ReferenceEquals(Active,this)||destination==null)return;

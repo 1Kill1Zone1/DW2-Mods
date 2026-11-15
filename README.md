@@ -1,16 +1,17 @@
 # DW2 Mods
 
-Local mods for Distant Worlds 2, shared for testing and review.
+Distant Worlds 2 mods, with one mod per top-level folder. Shared test helpers live in `Shared/`; build utilities live in `scripts/`.
 
-## Advanced Construction Mod 0.3.0
+| Mod | Version | Source and documentation | Test download |
+| --- | --- | --- | --- |
+| Advanced Construction Mod | 0.4.0 | [AdvancedConstructionMod/](AdvancedConstructionMod/) | [ACM 0.4.0 release](https://github.com/1Kill1Zone1/DW2-Mods/releases/tag/acm-v0.4.0) |
 
-Independent ship-design series, reverse retrofit-source editing, explicit targets and project/series transfers in the native ship designer.
+Advanced Construction Mod keeps independent ship-design Series, explicit retrofit targets, reverse source selection and project/Series transfers. Version 0.4.0 adds independent Automatic/Manual component upgrades per Series, retaining the hull, component layout and weapon families.
 
-- [Features and behavior](AdvancedConstructionMod/README.md)
-- [Install, build and test](AdvancedConstructionMod/TESTING.md)
-- [Version history](AdvancedConstructionMod/CHANGELOG.md)
-- [Ready-to-install test package](https://github.com/1Kill1Zone1/DW2-Mods/releases/tag/acm-v0.3.0)
+- [Features and rules](AdvancedConstructionMod/README.md)
+- [Installation and testing](AdvancedConstructionMod/TESTING.md)
+- [Change history](AdvancedConstructionMod/CHANGELOG.md)
 
-Tested against Steam beta **1.3.8.7**, using DW2 Mod Launcher and Positronic Matrix. Other game builds are not verified. The build verifies the supported game-assembly hash.
+Test target: **Steam beta 1.3.8.7**, DW2 Mod Launcher and Positronic Matrix. The runtime passed 559 isolated domain/native assertions; live rendering and natural research progression still need gameplay testing. Keep a separate pre-0.4 campaign save: version-3 Series metadata cannot be loaded by ACM 0.3.x.
 
-Only our mod code and test helpers are included. Obtain the game, launcher and dependency mods separately. Campaign fixtures, game binaries, personal profiles and internal work logs are not included.
+Only our mod source and shared test helpers are included. Obtain the game, launcher and third-party dependencies separately. No campaign fixtures, game binaries, personal profiles or internal work logs are published. Additional mods belong in their own folders when published; currently this repository contains ACM.

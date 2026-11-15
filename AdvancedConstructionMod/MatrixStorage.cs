@@ -89,7 +89,11 @@ internal sealed class MatrixStorage(Galaxy galaxy, short empireId)
                 output.Write(buffer, 0, read);
             }
             using var document=JsonDocument.Parse(output.ToArray());
-            if(document.RootElement.TryGetProperty("Version",out var version)&&version.GetInt32()==2&&!document.RootElement.TryGetProperty("Targets",out _))throw new InvalidDataException("Series targets are missing from version 2 metadata.");
+            if(document.RootElement.TryGetProperty("Version",out var version))
+            {
+                if(version.GetInt32()>=2&&!document.RootElement.TryGetProperty("Targets",out _))throw new InvalidDataException("Series targets are missing from metadata.");
+                if(version.GetInt32()==3&&!document.RootElement.TryGetProperty("AutoUpgrade",out _))throw new InvalidDataException("Series automatic-upgrade settings are missing from version 3 metadata.");
+            }
             var state = JsonSerializer.Deserialize<ConstructionSnapshot>(output.ToArray())
                 ?? throw new InvalidDataException("Advanced Construction metadata is empty.");
             state.Validate();
@@ -139,5 +143,5 @@ internal sealed class MatrixStorage(Galaxy galaxy, short empireId)
 
     private static bool Equivalent(ConstructionSnapshot left, ConstructionSnapshot right) =>
         left.Version == right.Version && left.Revision == right.Revision && left.Classes.OrderBy(pair => pair.Key).SequenceEqual(right.Classes.OrderBy(pair => pair.Key)) &&
-        left.DesignClasses.OrderBy(pair => pair.Key).SequenceEqual(right.DesignClasses.OrderBy(pair => pair.Key))&&left.Targets.OrderBy(p=>p.Key).SequenceEqual(right.Targets.OrderBy(p=>p.Key));
+        left.DesignClasses.OrderBy(pair => pair.Key).SequenceEqual(right.DesignClasses.OrderBy(pair => pair.Key))&&left.Targets.OrderBy(p=>p.Key).SequenceEqual(right.Targets.OrderBy(p=>p.Key))&&left.AutoUpgrade.OrderBy(p=>p.Key).SequenceEqual(right.AutoUpgrade.OrderBy(p=>p.Key));
 }

@@ -42,6 +42,7 @@ internal static class DesignsSeriesColumn
     {
         var list=__instance.DesignsList;var headings=__instance.ColumnHeadings;
         if(list==null||headings==null)return;
+        if(__instance.Empire?.IsPlayer==true&&__instance.Galaxy is { } ownerGalaxy)SeriesAutomation.EnsureModes(ownerGalaxy,__instance.Empire,out _,out _);
         if(!Dialogs.TryGetValue(__instance,out var layout))
         {
             layout=new Layout(__instance);Dialogs.Add(__instance,layout);
@@ -138,6 +139,9 @@ internal static class DesignsSeriesColumn
         DrawCell(batch,series,font,color,shadow,new(x,position.Y),width);
         hoverTips.Add(RowTip("Name",text,new RectangleF(position.X,position.Y,S(layout.Name.Size-layout.Name.HorizontalPadding-4),font.GetTotalLineSpacing(font.Size)),S(320),font,color,shadow));
         if(series!="—")hoverTips.Add(RowTip("Series",series,new RectangleF(x,position.Y,width,font.GetTotalLineSpacing(font.Size)),S(320),font,color,shadow));
+        if(series!="—"&&layout.NativeFields.FirstOrDefault(f=>string.Equals(f.Name,"AutoDesignRole",StringComparison.OrdinalIgnoreCase)) is { } auto)
+            hoverTips.Add(RowTip("Series component upgrade",SeriesAutomation.Description(galaxy,empire,design),
+                new RectangleF(position.X+S(layout.NativeFields.GetFieldPosition(auto.Name)),position.Y,S(auto.Size),font.GetTotalLineSpacing(font.Size)),S(440),font,color,shadow));
     }
 
     private static void DrawCell(SpriteBatch batch,string text,SpriteFont font,Color color,Color shadow,Vector2 position,float width)

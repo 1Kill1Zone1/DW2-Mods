@@ -52,7 +52,7 @@ internal sealed class EditorSession
             {error="Choose a researched, compatible project in this series and role.";return false;}
         }
         activateTargets.Clear();if(id>=0&&!useDraft)activateTargets.Add(id.Value);
-        string key=ConstructionSnapshot.TargetKey(ClassId,Role);draftTarget=useDraft;targetTouched=true;Classes.Version=2;
+        string key=ConstructionSnapshot.TargetKey(ClassId,Role);draftTarget=useDraft;targetTouched=true;Classes.Version=ConstructionSnapshot.CurrentVersion;
         if(!useDraft){if(id.HasValue)Classes.Targets[key]=id.Value;else Classes.Targets.Remove(key);}
         Dirty=true;error=null;return true;
     }
@@ -132,7 +132,7 @@ internal sealed class EditorSession
     private void PruneUnusedDraftSeries()
     {
         foreach(string id in createdClasses.Where(id=>id!=ClassId&&!Classes.DesignClasses.ContainsValue(id)).ToArray())
-        {Classes.Classes.Remove(id);foreach(string key in Classes.Targets.Keys.Where(k=>k.StartsWith(id+":",StringComparison.Ordinal)).ToArray())Classes.Targets.Remove(key);createdClasses.Remove(id);}
+        {Classes.Classes.Remove(id);foreach(string key in Classes.Targets.Keys.Where(k=>k.StartsWith(id+":",StringComparison.Ordinal)).ToArray())Classes.Targets.Remove(key);foreach(string key in Classes.AutoUpgrade.Keys.Where(k=>k.StartsWith(id+":",StringComparison.Ordinal)).ToArray())Classes.AutoUpgrade.Remove(key);createdClasses.Remove(id);}
     }
     internal bool ApplySources(IEnumerable<ConstructionChange> changes,out string? error)
     {
@@ -166,7 +166,7 @@ internal sealed class EditorSession
     }
     private ConstructionSnapshot Planned(int targetId)
     {
-        var next=Classes.Clone();next.Version=2;
+        var next=Classes.Clone();next.Version=ConstructionSnapshot.CurrentVersion;
         if(ClassId!=null&&(draftTarget||!targetTouched&&Origin!=null&&committed.Targets.GetValueOrDefault(ConstructionSnapshot.TargetKey(ClassId,Role),ConstructionGraph.Disabled)==Origin.DesignId))
             next.Targets[ConstructionSnapshot.TargetKey(ClassId,Role)]=targetId;
         return next;

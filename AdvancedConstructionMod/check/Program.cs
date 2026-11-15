@@ -33,6 +33,8 @@ internal static partial class Checks
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static int Run(string[] modes, string gameRoot)
     {
+        if(modes.Length==3&&modes[0]=="--audit-save"){AuditSave(gameRoot,Path.GetFullPath(modes[1]),Path.GetFullPath(modes[2]));return 0;}
+        if(modes.Length==3&&modes[0]=="--audit-auto"){AuditSave(gameRoot,Path.GetFullPath(modes[1]),Path.GetFullPath(modes[2]),true);return 0;}
         Domain();
         SeriesDomain();
         if(modes.Length==1&&modes[0]=="--visibility")

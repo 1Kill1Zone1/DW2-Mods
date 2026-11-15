@@ -29,6 +29,7 @@ public static class Entry
                 PatchBoth(harmony, AccessTools.DeclaredMethod(typeof(ShipDesignRenderer), "DoSave", [typeof(bool)]),
                     typeof(DesignerIntegration), nameof(DesignerIntegration.BeforeSave), nameof(DesignerIntegration.AfterSave));
                 DesignerIntegration.Install(harmony);
+                SeriesAutomation.Install(harmony);
                 initialized = true;
             }
             catch

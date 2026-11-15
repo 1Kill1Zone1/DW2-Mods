@@ -6,3 +6,7 @@
 .env
 .env.*
 .DS_Store
+*.pdb
+*.zip
+*.dmp
+*.user

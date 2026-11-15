@@ -106,8 +106,8 @@ internal static class DesignerIntegration
         state.TargetButton=ActionButton("ACM.TargetChoice","Target...",pad,y+row+gap,firstWidth,()=>Targets(__instance));state.TargetButton.ShowDropDownSelector=true;
         state.UseCurrent=ActionButton("ACM.UseCurrentTarget","Use this project",pad+firstWidth+gap,y+row+gap,width-firstWidth-gap,()=>UseCurrentTarget(__instance));
         float half=(width-gap)/2;
-        state.MoveProject=ActionButton("ACM.MoveProject","Move project...",pad,y+2*(row+gap),half,()=>Move(__instance,false));
-        state.MoveSeries=ActionButton("ACM.MoveSeries","Move entire series...",pad+half+gap,y+2*(row+gap),half,()=>Move(__instance,true));
+        state.MoveProject=ActionButton("ACM.MoveProject","Move this project",pad,y+2*(row+gap),half,()=>Move(__instance,false));
+        state.MoveSeries=ActionButton("ACM.MoveSeries","Move all in series",pad+half+gap,y+2*(row+gap),half,()=>Move(__instance,true));
         float sourceWidth=Math.Min(UserInterfaceHelper.CalculateScaledValue(128),width*.48f),sourceY=from?.Position.Y??(y+3*row);
         if(from!=null){from.Text="Upgrades From";from.SetSizeAndPosition(new(Math.Max(30,width-sourceWidth-pad),from.Size.Y),from.Position);}
         var sourceButton=new DWButton();DWControl.SetupButton(ref sourceButton,"ACM.EditSources",new(sourceWidth,Math.Min(row,from?.Size.Y??row)),new(panel.Size.X-pad-sourceWidth,sourceY),"Edit sources...",SourcesClick,false);
@@ -143,7 +143,7 @@ internal static class DesignerIntegration
             if(state.SourceButton!=null){state.SourceButton.Enabled=session!=null&&(!session.Published||!session.Draft.Obsolete);state.SourceButton.Text="Edit sources...";}
             if(state.TargetButton!=null&&session!=null)
             {
-                state.TargetButton.Text=DesignsSeriesColumn.Fit("Target: "+session.TargetChoice,state.TargetButton.FontNormal,state.TargetButton.Size.X-24);
+                state.TargetButton.Text=DesignsSeriesColumn.Fit("Series target: "+session.TargetChoice,state.TargetButton.FontNormal,state.TargetButton.Size.X-24);
                 state.TargetButton.HoverTips.Clear();state.TargetButton.AddHoverTip("Series target",session.TargetChoice,state.TargetButton.CalculateAbsoluteRectangle(),400,Side.Right);
             }
             if(session?.Sources.Count>0&&Field<ScrollableList>(renderer,"UpgradeFromList") is ScrollableList from)
@@ -159,7 +159,8 @@ internal static class DesignerIntegration
             }
             var staged=session?.Projection();
             state.ActivationCount=staged?.Preview.ObsoleteValues?.Count??0;
-            state.EffectiveText=session?.ClassId==null?"No confirmed series":session.EffectiveTarget(session.Draft,staged);
+            // Reading an old project must not substitute its edit-validation error for the series destination.
+            state.EffectiveText=session?.ClassId==null?"No confirmed series":session.HasSavedIdentity&&!session.Dirty?session.EffectiveTarget(session.Draft):session.EffectiveTarget(session.Draft,staged);
             UpdateInputState(renderer);
             if(Field<DWButton>(renderer,"UpgradeToViewButton") is { } view&&session!=null)
             {
@@ -194,7 +195,14 @@ internal static class DesignerIntegration
         {
             bool layout=state.Summary.Text!=summary||state.SeriesMode!=series||!state.Arranged;
             state.Summary.Text=summary;state.Summary.ForeColor=state.Error==null?ColorHelper.ForeColor:Color.OrangeRed;
-            if(layout)Arrange(__instance,state,series);
+            if(layout)
+            {
+                Arrange(__instance,state,series);
+                foreach(var (button,title,text) in new[]{
+                    (state.MoveProject,"Move this project","Move only this saved project to another series. Ships built from this project use its new series; other projects stay behind. Equipment and ship orders do not change. Review the plan before Save / Apply."),
+                    (state.MoveSeries,"Move all in series","Move every project in this series, including old and obsolete generations, to another series. All ships using those projects follow their new series. Equipment and existing orders do not change; Save / Apply publishes the reviewed plan.")})
+                    if(button!=null){button.HoverTips.Clear();button.AddHoverTip(title,text,button.CalculateAbsoluteRectangle(),400,Side.Right);}
+            }
         }
     }
     private static void Arrange(ShipDesignRenderer renderer,EditorState state,bool series)

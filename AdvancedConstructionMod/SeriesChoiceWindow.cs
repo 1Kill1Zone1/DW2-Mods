@@ -1,4 +1,5 @@
 using DistantWorlds.Types;
+using DistantWorlds.UI;
 
 namespace AdvancedConstructionMod;
 
@@ -9,11 +10,13 @@ internal sealed class SeriesChoiceWindow:NativeWindow
     private readonly Action? returnTo;
     private readonly DistantWorlds.UI.DWButton[] rows;
     private int page;
-    internal SeriesChoiceWindow(string title,IEnumerable<(string Text,Action Pick)> choices,Action? returnTo=null):base("ACM.Choices",title,720,540)
+    internal SeriesChoiceWindow(string title,IEnumerable<(string Text,Action Pick)> choices,Action? returnTo=null,string? explanation=null):base("ACM.Choices",title,720,540)
     {
         this.choices=choices.ToArray();this.returnTo=returnTo;
-        int count=Math.Max(1,(int)((Panel.Size.Y-S(148))/S(44)));
-        rows=Enumerable.Range(0,count).Select(i=>Button("ACM.Choice."+i,"",S(12),S(44)+i*S(44),Panel.Size.X-S(24),()=>Choose(i),S(40))).ToArray();
+        float help=explanation==null?0:S(72);
+        if(explanation!=null)Label("ACM.ChoiceHelp",explanation,S(12),S(40),Panel.Size.X-S(24),S(64));
+        int count=Math.Max(1,(int)((Panel.Size.Y-S(148)-help)/S(44)));
+        rows=Enumerable.Range(0,count).Select(i=>Button("ACM.Choice."+i,"",S(12),S(44)+help+i*S(44),Panel.Size.X-S(24),()=>Choose(i),S(40))).ToArray();
         Status=Label("ACM.ChoiceStatus","",S(12),Panel.Size.Y-S(100),Panel.Size.X-S(24),S(24));
         Button("ACM.ChoicePrevious","Previous",S(12),Panel.Size.Y-S(68),S(100),()=>{if(page>0){page--;Bind();}});
         Button("ACM.ChoiceNext","Next",S(124),Panel.Size.Y-S(68),S(100),()=>{if((page+1)*rows.Length<this.choices.Length){page++;Bind();}});
@@ -21,8 +24,14 @@ internal sealed class SeriesChoiceWindow:NativeWindow
     }
     private void Bind()
     {
-        for(int i=0;i<rows.Length;i++){int n=page*rows.Length+i;rows[i].Visible=n<choices.Length;if(rows[i].Visible)rows[i].Text=choices[n].Text;}
-        Message($"Page {page+1} / {Math.Max(1,(choices.Length+rows.Length-1)/rows.Length)}. Choices are staged until Save / Apply.");
+        for(int i=0;i<rows.Length;i++)
+        {
+            int n=page*rows.Length+i;rows[i].Visible=n<choices.Length;
+            if(rows[i].Visible){rows[i].Text=choices[n].Text;rows[i].HoverTips.Clear();rows[i].AddHoverTip("Choose",choices[n].Text,rows[i].CalculateAbsoluteRectangle(),440,Side.Right);}
+        }
+        foreach(var control in Panel.Controls.OfType<DistantWorlds.UI.DWButton>())
+        {if(control.Name=="ACM.ChoicePrevious")control.Enabled=page>0;else if(control.Name=="ACM.ChoiceNext")control.Enabled=(page+1)*rows.Length<choices.Length;}
+        Message(choices.Length==0?"No compatible choices. Cancel to keep the current plan.":$"Page {page+1} / {Math.Max(1,(choices.Length+rows.Length-1)/rows.Length)}. Choice returns to the previous screen; Save / Apply commits it.");
     }
     private void Choose(int i){int n=page*rows.Length+i;if(n>=choices.Length||!ReferenceEquals(Active,this))return;Close();choices[n].Pick();}
     internal override void Close(){bool active=ReferenceEquals(Active,this);base.Close();if(active)returnTo?.Invoke();}

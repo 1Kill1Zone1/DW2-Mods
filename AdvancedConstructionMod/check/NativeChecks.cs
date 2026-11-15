@@ -122,6 +122,7 @@ internal static partial class Checks
         SeriesColumnChecks(galaxy,empire);
         ReviewRegressionChecks(galaxy,empire,h2);
         SeriesNativeChecks(galaxy,empire,h2);
+        AutomationChecks(galaxy,empire);
         using(var finalBytes=new MemoryStream())
         {
             using(var writer=new BinaryWriter(finalBytes,System.Text.Encoding.UTF8,true))galaxy.WriteToStream(writer,header);

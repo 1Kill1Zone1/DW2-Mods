@@ -1,8 +1,26 @@
-# Advanced Construction Mod 0.3.0
+# Advanced Construction Mod 0.4.0
 
-Prepared for Steam beta 1.3.8.7. Installation is a separate owner decision.
+Checked local build for Steam beta 1.3.8.7. Install only while the game and launcher are closed.
 
 Keep independent ship-design series such as Hura and Little Devourer, choose the intended retrofit target, and move saved projects between series. Native roles, legal hulls, components, research, costs and retrofit permissions remain authoritative.
+
+## Independent automatic Series upgrades
+
+For a project with a Series, **Hull Upgrade** in Designs now controls only that Series and native role. Two Escort series can use different Automatic/Manual settings. Existing campaigns inherit the current native setting once; global ship-design automation must also be Automatic.
+
+After research, each enabled Series upgrades its latest active project. The hull, component slots, counts, layout, tactics and weapon families stay the same. Native component selection and researched improvements are used; a different equipment category is not inserted in place of a scanner. Change hulls manually. Unsafe or unavailable improvements are skipped with a reason in the Hull Upgrade tooltip. Repeated reviews without improvements create no new version.
+
+The new design retains its Series and automatic-retrofit permission. An explicit target advances only when that target was upgraded; another older pinned target remains selected. Automatic latest follows the new generation. No target and disabled source paths remain disabled. This creates projects, without sending ships to a yard. A conflicting Retrofit order/queue waits rather than silently retargeting it.
+
+Classified hulls are protected from native template replacement; other hulls and AI retain native generation. Existing obsolete targets are not repaired silently: choose the intended active project as the Series target explicitly.
+
+## Interface correction retained from 0.3.1
+
+Reading an obsolete current project now shows its saved series destination rather than substituting the current project's edit-validation error. An obsolete current project and an obsolete series target are different states; edit validation now explicitly says Current project.
+
+Transfer actions explain the difference between moving this project and moving all generations in the series. The transfer screen has numbered steps: receiving series, target for projects left behind, and target for projects being moved. Target selectors are unavailable until a receiving series is chosen; empty remaining groups say No projects remain. Native tooltips and visible helper text explain Automatic latest, No target, staging and the absence of immediate ship orders.
+
+The native template replacement reproduced on 0.3.0 is handled by the Series-aware automation in 0.4.0. The separate current-project/target validation and guided transfer controls from 0.3.1 remain.
 
 ## Series and targets
 
@@ -38,12 +56,12 @@ Per-campaign/per-empire metadata is stored through Positronic Matrix using verif
 
 **Native Save boundary:** the game publishes the component design before ACM's metadata commit. If that later commit fails, the newly saved native design can remain unclassified; ACM explicitly reports this. The previous series/target/path group and Upgrade origin status are retained, and the explicit target does not advance. This is not a rollback of native component publication.
 
-Version 1 metadata is read without forced conversion. The first ACM edit writes version 2 with per-role targets. **ACM 0.2.2 cannot read version 2 campaign metadata. Keep a separate pre-0.3.0 campaign slot before saving changed series; reverting DLL files alone does not downgrade a campaign.**
+Versions 1 and 2 metadata remain readable. Initializing independent modes writes version 3, preserving memberships and targets. **ACM 0.3.x cannot read version 3 campaign metadata. Keep the pre-0.4 campaign checkpoint for rollback; reverting DLL files alone does not downgrade a campaign.**
 
 ## Boundaries and verification
 
 Steam beta 1.3.8.7 only; the build pins DistantWorlds.Types.dll SHA-256 `787E4A1B6DA8763943A18DED8E3DC29BB452BA34297CEA2E726E5951B4F3B254`. Requires Positronic Matrix and DW2 Mod Launcher. No new View card or manual per-selected-ship cross-series Retrofit command is included. Native View retains its existing pending-save restrictions.
 
-499 isolated assertions passed with zero build warnings/errors. Checks cover domain rejection/selection, native coordinate input and pagination, actual Copy/Save/Upgrade lifecycle, obsolete targets, single/whole transfers, queue/active-yard guards, failure/retry/concurrency, legacy metadata and native campaign save/load. Existing actual Ship Logistics 1.0.40, Freight Dispatch 0.2.4 and Refreshed Shipset Colors 1.1.0 checks remain. See TESTING.md for reproducibility and manual acceptance. Builds/checks run sequentially through the root scripts/run-check.ps1.
+The serial domain/native suite covers independent modes, actual native design review, same-family component upgrades, exact slot retention, global policy, repeats, queued Retrofit refusal, stale state, Matrix/post-commit failures, cache rollback, schema migration and real native save/load. Prior editor, Sources, transfer, Ship Logistics 1.0.40, Freight Dispatch 0.2.4 and Shipset Colors 1.1.0 checks remain. The supplied runtime passed **559 domain/native assertions**, with zero compiler warnings/errors. See [TESTING.md](TESTING.md) for reproduction requirements and manual acceptance.
 
-Native UI tests use test-only font metrics and replace GPU presentation leaves. Live GPU rendering, fleet travel and FPS remain manual acceptance. No campaign fixture is distributed. Run native checks only on a disposable compatible fixture.
+Native UI tests use test-only font metrics and replace GPU presentation leaves. Live GPU rendering, fleet travel and FPS remain manual acceptance. No campaign fixture is distributed. Use a disposable supported fixture for native checks.

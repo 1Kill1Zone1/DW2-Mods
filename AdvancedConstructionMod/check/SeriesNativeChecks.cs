@@ -78,16 +78,33 @@ internal static partial class Checks
         using(var metrics=new FontMetrics())using(var ui=new NativeUi(galaxy))
         {
             var window=new TransferWindow(edit,false,()=>{});
-            AccessTools.Field(typeof(TransferWindow),"destination").SetValue(window,b);
-            AccessTools.Method(typeof(TransferWindow),"Bind").Invoke(window,null);
+            DWButton Control(string name)=>(DWButton)window.Panel.Controls.Single(c=>c.Name==name);
+            void At(DWButton button)
+            {Require(ReferenceEquals(NativeWindow.Active!.Panel.CheckHoveredControl(null!,NativeUi.Center(button)),button),"transfer/choice action is reachable at its real coordinate: "+button.Name);NativeUi.Click(button);}
+            Require(!Control("ACM.TransferSourceTarget.0").Enabled&&!Control("ACM.TransferDestinationTarget.0").Enabled&&!Control("ACM.TransferUse").Enabled,"transfer target controls and use action are unavailable until receiving series selected");
+            Require(((DWLabel)window.Panel.Controls.Single(c=>c.Name=="ACM.TransferGuidance")).Text.Contains("First choose"),"transfer shows visible first-step instruction without relying on hover");
+            foreach(string name in new[]{"ACM.TransferDestination","ACM.TransferSourceTarget.0","ACM.TransferDestinationTarget.0","ACM.TransferUse"})
+                foreach(var tip in Control(name).HoverTips)CheckTooltip(tip,"transfer help "+name);
+            At(Control("ACM.TransferDestination"));
+            Require(NativeWindow.Active is SeriesChoiceWindow&&NativeWindow.Active.Panel.Controls.Any(c=>c.Name=="ACM.ChoiceHelp"),"receiving-series picker explains difference between series and ship target");
+            DWButton? receiving=null;int choicePages=0;
+            while(receiving==null)
+            {
+                receiving=NativeWindow.Active!.Panel.Controls.OfType<DWButton>().FirstOrDefault(c=>c.Visible&&c.Name.StartsWith("ACM.Choice.")&&c.Text==edit.Classes.Classes[b]);
+                if(receiving!=null)break;
+                var next=(DWButton)NativeWindow.Active.Panel.Controls.Single(c=>c.Name=="ACM.ChoiceNext");Require(next.Enabled&&choicePages++<100,"receiving series remains accessible through choice pages");At(next);
+            }
+            At(receiving);Require(ReferenceEquals(NativeWindow.Active,window),"selecting receiving series returns to the same staged transfer");
             var choose=(DWButton)window.Panel.Controls.Single(c=>c.Name=="ACM.TransferDestinationTarget.0");
             Require(choose.Visible&&choose.Enabled,"invalid destination keeps correction control accessible");
-            NativeUi.Click(choose);Require(NativeWindow.Active is SeriesChoiceWindow,"invalid plan can open destination correction picker");
+            At(choose);Require(NativeWindow.Active is SeriesChoiceWindow,"invalid plan can open destination correction picker");
+            Require(((DWLabel)NativeWindow.Active!.Panel.Controls.Single(c=>c.Name=="ACM.ChoiceHelp")).Text.Contains("future Retrofit"),"destination target picker explains that selecting a project does not send ships to a yard");
             var pick=(DWButton)NativeWindow.Active!.Panel.Controls.First(c=>c is DWButton button&&button.Text.StartsWith(destOld.Name));
-            NativeUi.Click(pick);Require(ReferenceEquals(NativeWindow.Active,window),"target correction returns to same transfer modal");
+            At(pick);Require(ReferenceEquals(NativeWindow.Active,window),"target correction returns to same transfer modal");
             var use=(DWButton)window.Panel.Controls.Single(c=>c.Name=="ACM.TransferUse");
             Require(use.Enabled,"corrected obsolete target has a valid visible plan");NativeUi.Click(use);
             Require(edit.Dirty&&destOld.Obsolete,"Use transfer plan remains staged including old destination activation");
+            Require(window.Panel.Controls.All(c=>c.Position.Y>=0&&c.Position.Y+c.Size.Y<=window.Panel.Size.Y+1),"step labels and target help fit inside bounded transfer modal");
         }
         Require(edit.Apply(out _)&&!destOld.Obsolete&&old.ResolveRetrofitDesignId(galaxy,empire)==destOld.DesignId,"corrected old destination activates only with Apply");
         using(var metrics=new FontMetrics())using(var ui=new NativeUi(galaxy))
@@ -126,10 +143,10 @@ internal static partial class Checks
         Require(whole.StageTransfer(whole.Classes.DesignClasses.Where(p=>p.Value==a).Select(p=>p.Key).ToArray(),b,out _)&&whole.Apply(out _),"entire remaining source series transfers atomically");
         Require(registry.TryGet(empire,out state,out _)&&state.Classes.ContainsKey(a)&&!state.DesignClasses.ContainsValue(a)&&disabled.UpgradeDesignId==int.MinValue,"empty source retained and whole-series transfer preserves disabled path");
         Forget(galaxy);Require(Serialized(Read(Storage(galaxy,empire.EmpireId))!)==Serialized(state),"explicit transfer target persists through registry reload and real Matrix read");
-        var legacy=state.Clone();legacy.Version=1;legacy.Targets.Clear();Write(Storage(galaxy,empire.EmpireId),legacy);Forget(galaxy);
+        var legacy=state.Clone();legacy.Version=1;legacy.Targets.Clear();legacy.AutoUpgrade.Clear();Write(Storage(galaxy,empire.EmpireId),legacy);Forget(galaxy);
         var migration=new EditorSession(galaxy,empire,dest,null);
         Require(migration.Classes.Version==1&&migration.TargetChoice=="Automatic latest","native Matrix loads v1 without changing automatic behavior");
-        Require(migration.SetTarget(destOld.DesignId,false,out _)&&migration.Apply(out _),"first explicit target migrates v1 to v2 at commit");
-        Require(Read(Storage(galaxy,empire.EmpireId))!.Version==2&&Read(Storage(galaxy,empire.EmpireId))!.Targets[destKey]==destOld.DesignId,"migration persists target exactly for final native save/load check");
+        Require(migration.SetTarget(destOld.DesignId,false,out _)&&migration.Apply(out _),"first explicit target migrates legacy metadata at commit");
+        Require(Read(Storage(galaxy,empire.EmpireId))!.Version==ConstructionSnapshot.CurrentVersion&&Read(Storage(galaxy,empire.EmpireId))!.Targets[destKey]==destOld.DesignId,"migration persists target exactly for final native save/load check");
     }
 }

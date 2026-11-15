@@ -36,6 +36,7 @@ public static class ConstructionCommands
             {preview=Reject(error!);return false;}
 
             var next = preview.Next;
+            SeriesAutomation.FillDefaults(galaxy,empire,next);
             next.Revision = checked(current.Revision + 1);
             var byId = live.ToDictionary(item => item.DesignId);
             var oldArrows = preview.UpgradeValues.Where(pair => byId.ContainsKey(pair.Key)).ToDictionary(pair => pair.Key, pair => byId[pair.Key].UpgradeDesignId);
