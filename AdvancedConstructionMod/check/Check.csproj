@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>DW2ModLauncher.Loader</AssemblyName>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GameRoot Condition="'$(GameRoot)' == ''">C:/Games/Steam/steamapps/common/Distant Worlds 2</GameRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../AdvancedConstructionMod.csproj" />
+    <Compile Include="../../Shared/check/NativeUi.cs" Link="NativeUi.cs" />
+    <Reference Include="0Harmony;DistantWorlds.Core;DistantWorlds.Types;DistantWorlds.UI;DistantWorlds2;Stride;Stride.Core;Stride.Core.Mathematics;Stride.Core.Serialization;Stride.Engine;Stride.Games;Stride.Graphics;Stride.Input;Stride.Rendering" HintPath="$(GameRoot)/%(Identity).dll" Private="false" />
+  </ItemGroup>
+</Project>

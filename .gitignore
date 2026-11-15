@@ -1,0 +1,8 @@
+**/bin/
+**/obj/
+*.DWGame
+*.DWGame.*
+*.log
+.env
+.env.*
+.DS_Store

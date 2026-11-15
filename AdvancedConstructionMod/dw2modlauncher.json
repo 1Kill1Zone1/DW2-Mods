@@ -1,0 +1,41 @@
+{
+  "injection": {
+    "entryPoint": "AdvancedConstructionMod.Entry.Init",
+    "dll": "AdvancedConstructionMod.dll"
+  },
+  "minLauncherVersion": "1.0.30",
+  "hooksCoordinatedWith": [
+    "Ship Logistics@1.0.40",
+    "Freight Dispatch@0.2.4",
+    "Refreshed Shipset Colors@1.1.0",
+    "Galaxy Waypoints@0.12.1",
+    "Weapon FX Tuner@0.1.21",
+    "Battle Log@0.2.0",
+    "War Chest@1.0.21"
+  ],
+  "dependencies": [
+    {
+      "mod": "Positronic Matrix",
+      "workshopId": 3833406787,
+      "required": true,
+      "loadAfter": true
+    },
+    {
+      "mod": "Ship Logistics",
+      "workshopId": 3815304122,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Freight Dispatch",
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Refreshed Shipset Colors",
+      "workshopId": 3833408745,
+      "required": false,
+      "loadAfter": true
+    }
+  ]
+}
