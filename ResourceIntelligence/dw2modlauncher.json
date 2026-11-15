@@ -1,0 +1,6 @@
+{
+  "injection": { "entryPoint": "ResourceIntelligence.Entry.Init", "dll": "ResourceIntelligence.dll" },
+  "minLauncherVersion": "1.0.30",
+  "dependencies": [ { "mod": "Diplomatic Corps", "workshopId": 3829180757, "required": false, "loadAfter": true } ],
+  "hooksCoordinatedWith": [ "Diplomatic Corps@1.0.15" ]
+}

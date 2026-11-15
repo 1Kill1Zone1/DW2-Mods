@@ -1,0 +1,29 @@
+{
+  "injection": {
+    "entryPoint": "GalaxyWaypoints.Entry.Init",
+    "dll": "GalaxyWaypoints-0.12.1.dll"
+  },
+  "minLauncherVersion": "1.0.30",
+  "hooksCoordinatedWith": [
+    "Refreshed Visual Effects@1.0.10",
+    "Pathfinding Overhaul@0.8.0",
+    "Ship Logistics@1.0.40",
+    "Battle Log@0.2.0",
+    "Weapon FX Tuner@0.1.21",
+    "Deep Space Stability and Refuel@0.2.0"
+  ],
+  "dependencies": [
+    {
+      "mod": "Pathfinding Overhaul",
+      "workshopId": 3824235680,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Positronic Matrix",
+      "workshopId": 3833406787,
+      "required": true,
+      "loadAfter": true
+    }
+  ]
+}

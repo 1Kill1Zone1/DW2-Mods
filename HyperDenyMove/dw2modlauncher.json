@@ -1,0 +1,6 @@
+{
+  "injection": {
+    "entryPoint": "HyperDenyMove.Entry.Init",
+    "dll": "HyperDenyMove.dll"
+  }
+}

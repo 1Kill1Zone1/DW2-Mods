@@ -1,0 +1,22 @@
+{
+  "minLauncherVersion": "1.0.30",
+  "injection": {
+    "entryPoint": "RacialResearchUnlock.Entry.Init",
+    "dll": "RacialResearchUnlock.dll"
+  },
+  "dependencies": [
+    {
+      "mod": "Positronic Matrix",
+      "workshopId": 3833406787,
+      "required": true,
+      "loadAfter": true
+    },
+    {
+      "mod": "Coherent R&D",
+      "workshopId": 3819331138,
+      "required": false,
+      "loadAfter": true
+    }
+  ],
+  "author": "Alexey"
+}

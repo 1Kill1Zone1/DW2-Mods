@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <Version>0.12.1</Version>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <GameRoot Condition="'$(GameRoot)' == ''">C:/Games/Distant Worlds 2 Main/Distant Worlds 2</GameRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="src/*.cs" />
+    <Compile Include="../Shared/MapUiGate.cs" Link="MapUiGate.cs" />
+    <Compile Include="../Shared/NativeToolDock.cs;../Shared/NativeToolWindow.cs" />
+    <Reference Include="0Harmony;DistantWorlds.Core;DistantWorlds.Types;DistantWorlds.UI;DistantWorlds2;Stride;Stride.Core;Stride.Core.Mathematics;Stride.Engine;Stride.Games;Stride.Graphics;Stride.Input;Stride.Rendering" HintPath="$(GameRoot)/%(Identity).dll" Private="false" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,6 @@
+{
+  "displayName": "Galaxy Waypoints",
+  "description": "Generates useful multi-node corridors for neutral early/mid-game reference vessels: at least 5% and 10 seconds faster, or newly full-fuel reachable. Every retained node has a verified contribution and a saved route/profile certificate, separately labelled from current ship analysis. Nodes stay outside nebulae; generation is bounded, cancellable and never automatically replaces saved networks. Preserves native SURV/TR, current-system survey completion, environmental safety, manual orders and hidden-node access. v4 save state retains stable identities for multiple nodes sharing one discovery star. Requires DW2 Mod Launcher and Positronic Matrix. Existing saves are not regenerated automatically.",
+  "version": "0.12.1",
+  "bundles": []
+}

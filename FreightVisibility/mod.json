@@ -1,0 +1,6 @@
+{
+  "bundles": [],
+  "description": "Read-only freight totals in each resource Production/Runway tooltip. Actual cargo and own ships, pickup plans, refueling/refit status, and separate foreign carriers. Updates every two seconds while the resources panel is open. No changes to logistics or saves.",
+  "version": "0.1.1",
+  "displayName": "Freight Visibility"
+}

@@ -1,0 +1,7 @@
+{
+  "injection": { "entryPoint": "CancellationRefunds.Entry.Init", "dll": "CancellationRefunds.dll" },
+  "minLauncherVersion": "1.0.30",
+  "dependencies": [
+    { "mod": "Positronic Matrix", "workshopId": 3833406787, "required": true, "loadAfter": true }
+  ]
+}

@@ -1,0 +1,6 @@
+{
+  "displayName": "Freight Dispatch",
+  "version": "0.2.4",
+  "description": "Owned-base freight source priority, bounded physical dispatch tasks and a read-only own freighter overview with actual cargo, goals, assigned command queues and factual task/contract details. Requires Positronic Matrix. Optional Galaxy Waypoints0.10.0 checks actual freighter environmental protection at pickup and delivery before orders/contracts; refusal explains the wait.",
+  "bundles": []
+}

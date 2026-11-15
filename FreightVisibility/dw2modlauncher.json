@@ -1,0 +1,17 @@
+{
+  "dependencies": [
+    {
+      "required": false,
+      "workshopId": 3813818446,
+      "mod": "Freighter Logistics",
+      "loadAfter": true
+    }
+  ],
+  "injection": {
+    "dll": "FreightVisibility.dll",
+    "entryPoint": "FreightVisibility.Entry.Init"
+  },
+  "hooksCoordinatedWith": [
+    "Freighter Logistics@1.0.37"
+  ]
+}

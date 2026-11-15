@@ -1,0 +1,32 @@
+{
+  "injection": {
+    "entryPoint": "DeepSpaceStability.Entry.InitWithOptions",
+    "dll": "DeepSpaceStability.dll"
+  },
+  "minLauncherVersion": "1.0.30",
+  "hooksCoordinatedWith": [
+    "Ship Logistics@1.0.40",
+    "Galaxy Waypoints@0.9.2",
+    "Galaxy Waypoints@0.10.0",
+    "Troop Logistics@1.0.40"
+  ],
+  "dependencies": [
+    {
+      "mod": "Positronic Matrix",
+      "workshopId": 3833406787,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Ship Logistics",
+      "workshopId": 3815304122,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Galaxy Waypoints",
+      "required": false,
+      "loadAfter": true
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "displayName": "Weapon FX Tuner",
+  "shortDescription": "True RGB, independent layer opacity and live weapon FX profiles. Vanilla/XL; optional Refreshed. Ctrl+Alt+V.",
+  "version": "0.1.21",
+  "bundles": [],
+  "localBuild": "steam-profile-isolation-1"
+}

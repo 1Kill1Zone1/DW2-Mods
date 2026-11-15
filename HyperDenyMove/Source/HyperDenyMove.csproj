@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Version>0.1.0</Version>
+    <Nullable>enable</Nullable>
+    <GameRoot Condition="'$(GameRoot)' == ''">C:/Games/Distant Worlds 2 Main/Distant Worlds 2</GameRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="checks/**/*.cs" />
+    <Reference Include="0Harmony;DistantWorlds.Types;DistantWorlds.Core;Stride.Core.Mathematics"
+               HintPath="$(GameRoot)/%(Identity).dll" Private="false" />
+  </ItemGroup>
+</Project>
