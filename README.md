@@ -22,6 +22,6 @@ Advanced Construction Mod keeps independent ship-design Series, explicit retrofi
 - [Installation and testing](AdvancedConstructionMod/TESTING.md)
 - [Change history](AdvancedConstructionMod/CHANGELOG.md)
 
-Test target: **Steam beta 1.3.8.7**, DW2 Mod Launcher and Positronic Matrix. The runtime passed 559 isolated domain/native assertions; live rendering and natural research progression still need gameplay testing. Keep a separate pre-0.4 campaign save: version-3 Series metadata cannot be loaded by ACM 0.3.x.
+ACM's test target is **Steam beta 1.3.8.7**, DW2 Mod Launcher and Positronic Matrix. The runtime passed 559 isolated domain/native assertions; live rendering and natural research progression still need gameplay testing. Keep a separate pre-0.4 campaign save: version-3 Series metadata cannot be loaded by ACM 0.3.x. Each other module's target is specified in its own README and TESTING file; Cancellation Refunds is GOG 1.3.8.4 only and Steam beta is unverified.
 
 Only our mod source and shared test helpers are included. Obtain the game, launcher and third-party dependencies separately. No campaign fixtures, game binaries, personal profiles or internal work logs are published. Each mod is a prerelease candidate with its own explicit release link; Resource Intelligence 0.1.2 and Cancellation Refunds 0.1.0 are checked but not locally installed. The Spies overlay and vendor/Workshop mods are intentionally excluded.
