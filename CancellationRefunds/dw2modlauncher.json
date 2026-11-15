@@ -1,7 +1,10 @@
 {
   "injection": { "entryPoint": "CancellationRefunds.Entry.Init", "dll": "CancellationRefunds.dll" },
   "minLauncherVersion": "1.0.30",
+  "hooksCoordinatedWith": ["Troop Logistics@1.0.40", "War Chest@1.0.21"],
   "dependencies": [
-    { "mod": "Positronic Matrix", "workshopId": 3833406787, "required": true, "loadAfter": true }
+    { "mod": "Positronic Matrix", "workshopId": 3833406787, "required": true, "loadAfter": true },
+    { "mod": "Troop Logistics", "workshopId": 3821203666, "required": false, "loadAfter": true },
+    { "mod": "War Chest", "workshopId": 3824731625, "required": false, "loadAfter": true }
   ]
 }

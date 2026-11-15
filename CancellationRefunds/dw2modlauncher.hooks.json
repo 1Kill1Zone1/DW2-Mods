@@ -1,0 +1,279 @@
+{
+  "schema": 1,
+  "modVersion": "0.1.1",
+  "gameVersion": "1.3.8.7",
+  "hooks": [
+    {
+      "target": "DistantWorlds.Types.Economy:Expense(System.Single,DistantWorlds.Types.ExpenseType,System.Int64,System.Int16)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginExpense",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Economy:Expense(System.Single,DistantWorlds.Types.ExpenseType,System.Int64,System.Int16)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "method": "CancellationRefunds.Entry:ExpenseInstructions",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Economy:Expense(System.Single,DistantWorlds.Types.ExpenseType,System.Int64,System.Int16)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndExpense",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:BuildFacility(DistantWorlds.Types.Orb,DistantWorlds.Types.PlanetaryFacilityDefinition,System.Int64,System.Single,System.Byte,System.Boolean,System.String)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginBuild",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:BuildFacility(DistantWorlds.Types.Orb,DistantWorlds.Types.PlanetaryFacilityDefinition,System.Int64,System.Single,System.Byte,System.Boolean,System.String)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndBuild",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:BuildFacility(DistantWorlds.Types.Orb,DistantWorlds.Types.PlanetaryFacilityDefinition,System.Int64,System.Single,System.Byte,System.Boolean,System.String)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndPayment",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskRecruitTroops(DistantWorlds.Types.Orb,DistantWorlds.Types.TroopDefinition,DistantWorlds.Types.Troop)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginRecruit",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskRecruitTroops(DistantWorlds.Types.Orb,DistantWorlds.Types.TroopDefinition,DistantWorlds.Types.Troop)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndRecruit",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:RecruitAttackTroopsByType(DistantWorlds.Types.TroopType,System.Single&,System.Int32,System.Single,System.Int32,System.Int64,System.Single,System.Single&,System.Single&)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginRecruit",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:RecruitAttackTroopsByType(DistantWorlds.Types.TroopType,System.Single&,System.Int32,System.Single,System.Int32,System.Int64,System.Single,System.Single&,System.Single&)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndRecruit",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:CheckRecruitDefenseTroop(DistantWorlds.Types.Orb,DistantWorlds.Types.Colony,System.Single,System.Single,System.Single,System.Int64,System.Single,System.Single&,System.Single&)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginRecruit",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:CheckRecruitDefenseTroop(DistantWorlds.Types.Orb,DistantWorlds.Types.Colony,System.Single,System.Single,System.Single,System.Int64,System.Single,System.Single&,System.Single&)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndRecruit",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.TroopDefinition:GenerateTroop(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Colony,DistantWorlds.Types.Ship,DistantWorlds.Types.TroopDefinition,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:Generated",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:PayPrice(DistantWorlds.Types.Price,DistantWorlds.Types.ExpenseType)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginPay",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:PayPrice(DistantWorlds.Types.Price,DistantWorlds.Types.ExpenseType)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndPay",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:PayPrice(DistantWorlds.Types.Price,DistantWorlds.Types.ExpenseType)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndPayment",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapPlanetaryFacility(DistantWorlds.Types.Orb,System.Int32)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginFacilityCancel",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapPlanetaryFacility(DistantWorlds.Types.Orb,System.Int32)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "method": "CancellationRefunds.Entry:FacilityCancelInstructions",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapPlanetaryFacility(DistantWorlds.Types.Orb,System.Int32)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndFacilityCancel",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskDisbandTroop(DistantWorlds.Types.TroopList)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginTroopCancel",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskDisbandTroop(DistantWorlds.Types.TroopList)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndTroopCancel",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Troop:CompleteTeardown(DistantWorlds.Types.Galaxy)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginTeardown",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Troop:CompleteTeardown(DistantWorlds.Types.Galaxy)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndTeardown",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:FacilityCompleted(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,DistantWorlds.Types.PlanetaryFacility,System.Int64,System.Single&)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:FacilityCompleted",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:ProcessFacilities(System.Single,System.Int64,DistantWorlds.Types.Orb,DistantWorlds.Types.Empire,DistantWorlds.Types.Galaxy)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:FacilitiesProgress",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:ProcessTroops(System.Single,DistantWorlds.Types.Empire)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:TroopsProgress",
+      "priority": 0,
+      "before": [],
+      "after": [
+        "DW2TroopLogistics.TroopHealing"
+      ]
+    },
+    {
+      "target": "DistantWorlds.Types.Troop:ChangeEmpire(DistantWorlds.Types.Galaxy,System.Int16)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "method": "CancellationRefunds.Entry:OwnershipInstructions",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:ChangeEmpire(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Boolean,System.Boolean,DistantWorlds.Types.CharacterHandlingBehavior,System.Single,System.Single,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "method": "CancellationRefunds.Entry:OwnershipInstructions",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:WriteToStream(System.IO.BinaryWriter,DistantWorlds.Types.GameGalaxyData)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:Save",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:ReadFromStream(System.IO.BinaryReader,DistantWorlds.Types.GameGalaxyData&,System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]&)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:Loaded",
+      "priority": 0,
+      "before": [],
+      "after": []
+    }
+  ]
+}

@@ -1,6 +1,6 @@
 {
   "displayName": "Cancellation Refunds",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Returns the unspent monetary share when newly tracked construction or recruitment is cancelled. Requires Positronic Matrix.",
   "bundles": []
 }

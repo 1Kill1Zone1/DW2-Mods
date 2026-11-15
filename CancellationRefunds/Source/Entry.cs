@@ -1,5 +1,6 @@
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Security.Cryptography;
 using DistantWorlds.Core;
 using DistantWorlds.Types;
 using HarmonyLib;
@@ -61,8 +62,13 @@ public static class Entry
     public static void Init()
     {
         if (initialized) return;
-        if (typeof(Galaxy).Assembly.GetName().Version != new Version(1, 3, 8, 4))
-            throw new NotSupportedException("Cancellation Refunds0.1.0 requires the verified DW2 1.3.8.4 engine.");
+        var engine=typeof(Galaxy).Assembly;
+        var version=engine.GetName().Version;
+        bool beta=version==new Version(1,3,8,7);
+        if(version!=new Version(1,3,8,4)&&!beta)
+            throw new NotSupportedException("Cancellation Refunds requires DW2 1.3.8.4 or the verified Steam beta 1.3.8.7.");
+        if(beta&&Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(engine.Location)))!="787E4A1B6DA8763943A18DED8E3DC29BB452BA34297CEA2E726E5951B4F3B254")
+            throw new NotSupportedException("Cancellation Refunds: unsupported Steam beta engine hash; no economic hooks installed.");
         SavedData.RequireChannels();
         try
         {
