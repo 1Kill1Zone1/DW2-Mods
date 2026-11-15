@@ -1,11 +1,14 @@
-# Testing Resource Intelligence
+# Testing Resource Intelligence 0.1.2
 
-145 offline checks. Prepared for Steam beta 1.3.8.7 but not installed locally.
+Target: Steam beta1.3.8.7 package; see the bounded verification evidence below.
 
-1. Use a new or disposable campaign and confirm the launcher enables the manifest dependencies.
-2. Exercise the feature described above once with its normal game UI.
-3. Save and reload only if the feature documents persistent state; keep a backup first.
-4. Compare every released file with SHA256SUMS before reporting a fault.
+145 Steam beta native checks for version0.1.2; checked candidate, not locally installed. Live popup/camera presentation remains manual.
 
-This prerelease does not promise compatibility with other game versions, unrelated mod stacks, GPU rendering, or performance beyond its stated evidence.
+Install with game/launcher closed, obtain the dependencies listed in dw2modlauncher.json separately, and use a disposable campaign/save slot.
 
+1. Talk to a familiar empire or pirate faction outside war. Choose Buy resource information, an owned origin colony, resource and occupation filter. Before payment show the price calculation and straight-line distance while hiding the destination name/coordinates.
+2. Cancel a quote: neither treasury should change. Confirm one valid quote: debit the player once, credit that seller once and discover the purchased body on the map.
+3. Check shortage/rarity pricing and the occupied-deposit discount. A stale quote or changed price requires a fresh confirmation; repeated clicking must not charge twice.
+4. Inspect the successful discovery popup and journal receipt. Save/reload, open the receipt and show the bought planet on the map without purchasing again.
+
+Report game/mod/dependency versions, steps, expected/actual result and screenshots. Do not post private campaign files publicly. These checks do not establish live GPU performance or compatibility with every mod stack.

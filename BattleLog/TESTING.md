@@ -1,11 +1,14 @@
-# Testing Battle Log
+# Testing Battle Log 0.2.0
 
-708 native assertions; live panel rendering remains manual.
+Target: Steam beta1.3.8.7 package; see the bounded verification evidence below.
 
-1. Use a new or disposable campaign and confirm the launcher enables the manifest dependencies.
-2. Exercise the feature described above once with its normal game UI.
-3. Save and reload only if the feature documents persistent state; keep a backup first.
-4. Compare every released file with SHA256SUMS before reporting a fault.
+708 recorded native assertions; live combat presentation and FPS remain manual.
 
-This prerelease does not promise compatibility with other game versions, unrelated mod stacks, GPU rendering, or performance beyond its stated evidence.
+Install with game/launcher closed, obtain the dependencies listed in dw2modlauncher.json separately, and use a disposable campaign/save slot.
 
+1. Open the Battle Log during or after a small disposable battle using the HUD button or Ctrl+Alt+B. Verify recorded firing/impact rows correspond to the observed sides.
+2. Switch between our and enemy rows; inspect the known weapon/composition and shield/armor results. Actual measured combat values must remain distinct from calculated weapon properties.
+3. Inspect a ship with incomplete intelligence: hidden components must stay unknown. Missing observations must not appear as zero damage or as a confirmed explanation.
+4. Exercise the side/filter/detail controls, close/reopen the panel and open a native modal. Report unclear unavailable/subset labels, clipped text or input interception with a screenshot.
+
+Report game/mod/dependency versions, steps, expected/actual result and screenshots. Do not post private campaign files publicly. These checks do not establish live GPU performance or compatibility with every mod stack.
