@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType><TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <AssemblyName>DW2ModLauncher.Loader</AssemblyName>
+    <GameRoot>C:/Games/Distant Worlds 2 Main/Distant Worlds 2</GameRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../FreightDispatch.csproj" />
+    <Compile Include="../../Shared/check/NativeUi.cs" Link="NativeUi.cs" />
+    <Compile Include="../../Shared/check/NativeHud.cs" Link="NativeHud.cs" />
+    <Reference Include="0Harmony;DistantWorlds2;DistantWorlds.UI;DistantWorlds.Core;DistantWorlds.Types;Stride.Core;Stride.Core.IO;Stride.Core.Mathematics;Stride.Core.Serialization;Stride.Engine;Stride.Games;Stride.Graphics;Stride.Input;Stride.Rendering" HintPath="$(GameRoot)/%(Identity).dll" Private="true" />
+  </ItemGroup>
+</Project>

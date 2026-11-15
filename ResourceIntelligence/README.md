@@ -1,5 +1,11 @@
-# Distant Worlds 2 local mod release
+# Resource Intelligence 0.1.2
 
-This folder is a standalone DW2 Mod Launcher mod. Install it by copying its complete folder into the game's `mods` directory and enabling it in the launcher. Read `mod.json` and `dw2modlauncher.json` for the exact version, entry point, and dependencies. Dependencies are installed separately; this release never redistributes the game, launcher, or third-party DLLs.
+Lets a player buy one seller-known resource deposit during eligible diplomacy conversations.
 
-The binary is pinned in `SHA256SUMS`. `Source` is a frozen publication snapshot where supplied. It may require .NET 8 and locally installed game assemblies to build; those assemblies are not included. The stated API target and verification limits are in `TESTING.md`. Use a disposable campaign and retain a save backup before live use.
+**Dependencies:** Optional: Diplomatic Corps.
+
+**Supported target:** Distant Worlds 2 Steam beta 1.3.8.7 with DW2 Mod Launcher. Copy this complete folder to the game's mods directory, enable it in the launcher, and install any dependencies separately. No game DLLs, settings, saves, profiles, logs, or vendor binaries are redistributed.
+
+**Source:** Source/ is a publication snapshot. Build with .NET 8 and local game managed assemblies: dotnet build Source/ResourceIntelligence.csproj -c Release -p:GameRoot=<game managed DLL folder>. Helper files required by projects that reference ../Shared are supplied in this folder's Shared/ directory.
+
+

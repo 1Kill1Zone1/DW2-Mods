@@ -1,5 +1,11 @@
-# Testing and limits
+# Testing Racial Research Unlock
 
-Each release is a checked candidate for Distant Worlds 2 Steam beta 1.3.8.7 unless its own README says otherwise. `SHA256SUMS` binds every included file. The release does not claim live GPU rendering, FPS, broad third-party compatibility, or save migration unless explicitly documented. No personal profile, settings, campaign, log, internal receipt, game file, or dependency binary is included.
+Offline boundary, prerequisite, persistence, and compatibility checks; live UI is manual.
 
-For a live check, use a new or disposable campaign, verify the launcher loads the exact manifest dependencies, exercise only the documented feature, and keep a backup of any existing save.
+1. Use a new or disposable campaign and confirm the launcher enables the manifest dependencies.
+2. Exercise the feature described above once with its normal game UI.
+3. Save and reload only if the feature documents persistent state; keep a backup first.
+4. Compare every released file with SHA256SUMS before reporting a fault.
+
+This prerelease does not promise compatibility with other game versions, unrelated mod stacks, GPU rendering, or performance beyond its stated evidence.
+

@@ -1,0 +1,147 @@
+{
+  "schema": 1,
+  "modVersion": "0.2.4",
+  "gameVersion": "1.3.8.7",
+  "hooks": [
+    {
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "Within dispatch selection only, filters each candidate for ownership, empty cargo, native docking/path/fuel checks; original eligibility otherwise.",
+      "targetAssembly": "DistantWorlds.Types",
+      "target": "DistantWorlds.Types.Empire:FindFreighterToFulfillContract(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,DistantWorlds.Types.StellarObject,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.StellarObject,System.Single,System.Boolean&,System.UInt64,System.Boolean)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "changes-args",
+      "why": "After installed fuel-first review, allocates bounded owned dispatch contracts and native missions; no uncontracted task demand escapes to the ordinary scheduler.",
+      "targetAssembly": "DistantWorlds.Types",
+      "target": "DistantWorlds.Types.Empire:FulfillOrders(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,System.Int64,System.Single,DistantWorlds.Types.OrderList,System.Single,System.Single,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.EmpireList,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.OrbList,System.UInt64)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "changes-args",
+      "why": "Orders eligible owned High sources without changing native path scores; keeps dedicated task orders out of ordinary recruitment.",
+      "targetAssembly": "DistantWorlds.Types",
+      "target": "DistantWorlds.Types.Empire:FulfillSingleOrderSources(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Order,DistantWorlds.Types.OrderList,DistantWorlds.Types.Orb,System.Int64,System.Single&,System.Collections.Generic.Dictionary`2[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[DistantWorlds.Types.IndexFactorList, DistantWorlds.Types, Version=1.3.8.7, Culture=neutral, PublicKeyToken=null]],System.Single,System.Single,DistantWorlds.Types.SortableStellarObjectList,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.EmpireList,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.StellarObject,System.UInt64)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "changes-args",
+      "why": "Filters active exported resources from new source replenishment arguments without modifying user stock settings.",
+      "targetAssembly": "DistantWorlds.Types",
+      "target": "DistantWorlds.Types.Empire:OrderResourcesToMeetStockLevels(System.Int32,DistantWorlds.Types.ItemType,DistantWorlds.Types.ResourceQuantityList,DistantWorlds.Types.CargoList,System.Single,DistantWorlds.Types.Empire,System.Int64,DistantWorlds.Types.ResourceQuantityList,System.Boolean)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "Captures delivered progress before native contract removal even when task scheduling is faulted.",
+      "targetAssembly": "DistantWorlds.Types",
+      "target": "DistantWorlds.Types.Galaxy:CancelContract(DistantWorlds.Types.Contract)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Protects active manual reserves via per-call arguments; rejects new reverse replenishment and unauthorised dedicated-task allocations.",
+      "targetAssembly": "DistantWorlds.Types",
+      "target": "DistantWorlds.Types.Galaxy:InitiateContract(System.Int64,DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,DistantWorlds.Types.Order,System.Int32,DistantWorlds.Types.ItemType,System.Int16,DistantWorlds.Types.Orb,DistantWorlds.Types.StellarObject,DistantWorlds.Types.CargoList,DistantWorlds.Types.CargoList,DistantWorlds.Types.ResourceQuantityList,DistantWorlds.Types.Ship,System.Single,System.Single,System.Single,System.Single&,System.Single,System.Single,System.Boolean)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "Flushes verified Matrix task identities and delivery totals before native serialization, retrying after fault cleanup. Cleanup or retry failure aborts serialization instead of saving a stale ledger. Missing/corrupt payloads with no valid session data remain preserved.",
+      "targetAssembly": "DistantWorlds.Types",
+      "target": "DistantWorlds.Types.Galaxy:WriteToStream(System.IO.BinaryWriter,DistantWorlds.Types.GameGalaxyData)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Stops new task pickups after cancellation or endpoint loss while preserving loaded delivery.",
+      "targetAssembly": "DistantWorlds.Types",
+      "target": "DistantWorlds.Types.Ship:CommandLoad(System.DateTime,System.Single,DistantWorlds.Types.Location,DistantWorlds.Types.CargoList,DistantWorlds.Types.ShipMission,DistantWorlds.Types.Empire,System.Boolean)"
+    },
+    {
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "Reconciles task delivery totals and allocation identities from native contract outcomes, including while the fault latch stops new pickups.",
+      "targetAssembly": "DistantWorlds.Types",
+      "target": "DistantWorlds.Types.Ship:CommandUnload(System.DateTime,System.Single,DistantWorlds.Types.Location,DistantWorlds.Types.ShipMission,DistantWorlds.Types.Empire,System.Int64,System.Boolean)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Rejects keyboard input only for Freight input fields while hidden, obstructed, or noneditable.",
+      "targetAssembly": "DistantWorlds.UI",
+      "target": "DistantWorlds.UI.DWTextBox:AcceptKeyPress(System.DateTime,Stride.Input.Keys,System.Boolean,System.Boolean,System.Boolean,System.Boolean&)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Rejects keyboard input only for Freight input fields while hidden, obstructed, or noneditable.",
+      "targetAssembly": "DistantWorlds.UI",
+      "target": "DistantWorlds.UI.DWTextBox:AcceptKeyPresses(System.Collections.Generic.List`1[[Stride.Input.Keys, Stride.Input, Version=4.2.0.28, Culture=neutral, PublicKeyToken=null]],System.Boolean,System.Boolean,System.Boolean)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "Shared native-tool mouse-down ownership reset; leaves original native input handling intact.",
+      "targetAssembly": "DistantWorlds.UI",
+      "target": "DistantWorlds.UI.UserInterfaceController:DoMouseDown(DistantWorlds.Types.GameSettings,Stride.Core.Mathematics.Point,System.Boolean,DistantWorlds.Types.Empire,System.Boolean,System.Boolean)"
+    },
+    {
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "Updates the scoped native panel and dock with map/observer/occlusion guards.",
+      "targetAssembly": "DistantWorlds.UI",
+      "target": "DistantWorlds.UI.UserInterfaceController:Update(System.Single,Stride.Core.Mathematics.Point,System.Int32,System.Int32)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Verifies and commits FD state before native SaveGame opens its target. A typed preflight rejection skips both native save and success postfixes before any file is opened; its finalizer handles only that rejection and a visible notice is queued.",
+      "targetAssembly": "DistantWorlds2",
+      "target": "DistantWorlds2.DWGame:SaveGame(System.String)"
+    },
+    {
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "Restores the prepared-save scope and clears only the FD preflight rejection; unrelated exceptions remain intact.",
+      "targetAssembly": "DistantWorlds2",
+      "target": "DistantWorlds2.DWGame:SaveGame(System.String)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Consumes Escape only for the selected visible Freight panel and game hotkeys only while its own numeric or search field has focus; other input remains native.",
+      "targetAssembly": "DistantWorlds2",
+      "target": "DistantWorlds2.InputSystem:HandleKeyPress(DistantWorlds.Types.Galaxy,DistantWorlds.Types.KeyMapping,Stride.Games.GameTime,System.Single,System.Single,System.Single)"
+    },
+    {
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Suppresses installed Freighter Logistics top-up only for task voyages and selected resource holds at valid owned export sources.",
+      "targetAssembly": "DW2FreighterLogistics",
+      "target": "DW2FreighterLogistics.TopUp:Prefix(DistantWorlds.Types.Ship,DistantWorlds.Types.CargoList,DistantWorlds.Types.ShipMission,DistantWorlds.Types.Empire)"
+    },
+    {
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "Adds only the currently registered, owned FreightDispatchPanel to this older peer's recognized tool windows. Other names, native/modals and foreign controls remain unchanged; targetAssembly identifies the exact peer copy.",
+      "targetAssembly": "BattleLog",
+      "target": "LocalModUi.NativeToolDock:IsToolWindow(System.String)"
+    },
+    {
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "Adds only the currently registered, owned FreightDispatchPanel to this older peer's recognized tool windows. Other names, native/modals and foreign controls remain unchanged; targetAssembly identifies the exact peer copy.",
+      "targetAssembly": "WeaponFX",
+      "target": "LocalModUi.NativeToolDock:IsToolWindow(System.String)"
+    },
+    {
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "Adds only the currently registered, owned FreightDispatchPanel to this older peer's recognized tool windows. Other names, native/modals and foreign controls remain unchanged; targetAssembly identifies the exact peer copy.",
+      "targetAssembly": "GalaxyWaypoints",
+      "target": "LocalModUi.NativeToolDock:IsToolWindow(System.String)"
+    }
+  ]
+}

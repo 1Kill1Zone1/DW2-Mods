@@ -1,0 +1,41 @@
+{
+  "injection": {
+    "entryPoint": "FreightDispatch.Entry.Init",
+    "dll": "FreightDispatch.dll"
+  },
+  "minLauncherVersion": "1.0.30",
+  "dependencies": [
+    {
+      "mod": "Positronic Matrix",
+      "workshopId": 3833406787,
+      "required": true,
+      "loadAfter": true
+    },
+    {
+      "mod": "Freighter Logistics",
+      "workshopId": 3813818446,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Battle Log",
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Weapon FX Tuner",
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Galaxy Waypoints",
+      "required": false,
+      "loadAfter": true
+    }
+  ],
+  "hooksCoordinatedWith": [
+    "War Chest@1.0.21",
+    "Ship Logistics@1.0.40",
+    "Refreshed Shipset Colors@1.1.0"
+  ]
+}
