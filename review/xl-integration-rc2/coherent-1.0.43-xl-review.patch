@@ -1,0 +1,1215 @@
+diff --git a/dll/DW2CoherentResearch/BaseWeapons.cs b/dll/DW2CoherentResearch/BaseWeapons.cs
+index 27cd6e3..6e11b8b 100644
+--- a/dll/DW2CoherentResearch/BaseWeapons.cs
++++ b/dll/DW2CoherentResearch/BaseWeapons.cs
+@@ -79,6 +79,7 @@ static class BaseWeapons
+         // a hull with a stored template never generates one, so the last one on this thread is not this design's
+         WeaponAllocation.Template = null;
+         ShipMissions.Last = null;
++        ShipMissions.Generating=null;
+         RangeBands.Current = null;
+         ProfilePicker.MixedCrewWanted = false;
+         if (!ShipDesignBlock.Applies(empire))
+diff --git a/dll/DW2CoherentResearch/DesignLines.cs b/dll/DW2CoherentResearch/DesignLines.cs
+index 1dc4cd2..fc81b28 100644
+--- a/dll/DW2CoherentResearch/DesignLines.cs
++++ b/dll/DW2CoherentResearch/DesignLines.cs
+@@ -88,8 +88,11 @@ static class DesignLines
+ 
+     // The mission the design was made for: the tag on the object, else the record by id; null when it has neither.
+     public static string MissionOf(Galaxy galaxy, Design design)
++        => Enabled ? KnownMission(galaxy, design) : null;
++
++    internal static string KnownMission(Galaxy galaxy, Design design)
+     {
+-        if (!Enabled || design == null)
++        if (design == null)
+         {
+             return null;
+         }
+@@ -116,6 +119,27 @@ static class DesignLines
+         return kept.Length == 0 ? null : kept;
+     }
+ 
++    internal static void KeepInheritedMission(Galaxy galaxy, Design target, string sourceMission)
++    {
++        // A newly selected draft mission takes precedence, including when the editor save hook runs later.
++        var mission = KnownMission(galaxy, target) ?? sourceMission;
++        var set = ProfileChoices.Setter;
++        if (set == null || Read(galaxy, target.DesignId) == mission) return;
++        set(galaxy, Owner, KeyOf(target.DesignId), mission);
++        if (Read(galaxy, target.DesignId) == mission) recorded.AddOrUpdate(target, mission);
++    }
++
++    internal static bool SaveSelectedMission(Galaxy galaxy, Design target, string mission)
++    {
++        if (ProfileChoices.Setter is not { } set) return false;
++        if (Read(galaxy, target.DesignId) != mission)
++            set(galaxy, Owner, KeyOf(target.DesignId), mission);
++        if (Read(galaxy, target.DesignId) != mission) return false;
++        recorded.AddOrUpdate(target, mission);
++        tags.AddOrUpdate(target, new Tag { Mission = mission });
++        return true;
++    }
++
+     // Drops the record of a deleted design (an empty value reads as none).
+     public static void Forget(Galaxy galaxy, int designId)
+     {
+diff --git a/dll/DW2CoherentResearch/DesignerMissionPanel.cs b/dll/DW2CoherentResearch/DesignerMissionPanel.cs
+index 5a72cff..84e9bc7 100644
+--- a/dll/DW2CoherentResearch/DesignerMissionPanel.cs
++++ b/dll/DW2CoherentResearch/DesignerMissionPanel.cs
+@@ -26,6 +26,12 @@ static class DesignerMissionPanel
+         public DWPanel Panel;
+         public ToggleButtonGroup Group;
+         public DWLabel Label;
++        public DWButton Edit;
++        public Design PreviewDesign;
++        public int CloseCount;
++        public string PreviewName;
++        public MissionPresets.Scope PreviewScope;
++        public MissionPresets.Values PreviewValues;
+         // the combat range rows under the buttons: the band the ship holds in, and the longest weapon and stance it comes from (CombatRange.cs)
+         public DWLabel RangeLabel, RangeValue, LongestLabel, LongestValue;
+         public DWPanel Upgrade;
+@@ -41,6 +47,8 @@ static class DesignerMissionPanel
+ 
+     public static void Install(Harmony harmony, Action<string> log)
+     {
++        LiveChannel.Provide<Func<object,bool>>("coherent-research.editor-mission-visible",1,renderer=>
++            states.TryGetValue(renderer,out var state) && state.Panel.Visible);
+         rendererType = AccessTools.TypeByName("DistantWorlds2.ShipDesignRenderer") ?? throw new TypeLoadException("DistantWorlds2.ShipDesignRenderer");
+         Type baseType = AccessTools.TypeByName("DistantWorlds2.DWRendererBase") ?? throw new TypeLoadException("DistantWorlds2.DWRendererBase");
+         Type scaledType = AccessTools.TypeByName("DistantWorlds2.ScaledRenderer") ?? throw new TypeLoadException("DistantWorlds2.ScaledRenderer");
+@@ -102,6 +110,16 @@ static class DesignerMissionPanel
+         //   relies:  every way out of the designer (Close, Save and Exit, the upgrade and buy paths) ends in this method
+         //   moved?:  search ScaledRenderer for "UpgradePanel.Visible = false"
+         //   breaks:  loud if renamed or re-signed; the panel would stay on the map again
++        if (MissionPresets.Enabled)
++        {
++            harmony.Patch(AccessTools.Method(rendererType,"Update",new[]{typeof(CameraInfo),typeof(float),typeof(float),typeof(float)}),
++                postfix:new HarmonyMethod(typeof(DesignerMissionPanel),nameof(PresetEditorTick)));
++            harmony.Patch(AccessTools.Method(rendererType,"DrawComponentBays"),
++                postfix:new HarmonyMethod(typeof(DesignerMissionPanel),nameof(HideBayHover)));
++            harmony.Patch(AccessTools.Method(rendererType,"DoSave",new[]{typeof(bool)}),
++                prefix:new HarmonyMethod(typeof(DesignerMissionPanel),nameof(BeforePresetSave)),
++                postfix:new HarmonyMethod(typeof(DesignerMissionPanel),nameof(AfterPresetSave)));
++        }
+         Type scaledType2 = scaledType;
+         harmony.Patch(AccessTools.Method(scaledType2, "CloseShipDesign", Type.EmptyTypes) ?? throw new MissingMethodException(scaledType2.FullName, "CloseShipDesign"),
+             postfix: new HarmonyMethod(typeof(DesignerMissionPanel), nameof(Closed)));
+@@ -140,12 +158,49 @@ static class DesignerMissionPanel
+         }
+     }
+ 
++    internal static void PresetEditorTick()=>MissionPresetWindow.Active?.UpdateForecast();
++
++    internal static void HideBayHover(ref Vector3 ____HoveredBayScreenPosition,ref ComponentBay ___HoveredComponentBay)
++    {
++        if(MissionPresetWindow.Active==null)return;
++        ____HoveredBayScreenPosition=Vector3.Zero;
++        ___HoveredComponentBay=null;
++    }
++
++    internal static void BeforePresetSave(object __instance, bool closeScreen, out Action __state)
++    {
++        __state=null;
++        if(!closeScreen || !states.TryGetValue(__instance,out var s) || s.PreviewValues is not {} values ||
++            s.PreviewName!=s.Chosen || !ReferenceEquals(s.PreviewDesign,fDesign.GetValue(__instance)))return;
++        var design=s.PreviewDesign;
++        var empire=(Empire)fEmpire.GetValue(__instance);
++        var hull=design.GetShipHull(empire.Galaxy);
++        var role=empire.InferShipRole(hull);
++        var name=s.Chosen;
++        var scope=s.PreviewScope;
++        int closeCount=s.CloseCount;
++        __state=()=>
++        {
++            if(s.CloseCount==closeCount || !ReferenceEquals(empire.Designs.GetById(design.DesignId),design) ||
++                !ReferenceEquals(empire.Galaxy.Designs.GetById(design.DesignId),design))return;
++            if(!MissionPresets.Save(empire,role,hull,name,scope,values))
++                ModHost.Error("The design was saved, but its previewed mission preset could not be saved.");
++        };
++    }
++    internal static void AfterPresetSave(bool __runOriginal, Action __state)
++    {
++        if(__runOriginal)__state?.Invoke();
++    }
++
+     public static void Closed(object __instance)
+     {
+         try
+         {
+             if (postScene.Invoke(__instance, null) is object designer && states.TryGetValue(designer, out State s))
+             {
++                MissionPresetWindow.Active?.Close();
++                s.CloseCount++;
++                s.PreviewValues=null;
+                 s.Panel.Visible = false;
+             }
+         }
+@@ -235,6 +290,12 @@ static class DesignerMissionPanel
+             return DWLabel.Generate(text, name, new Vector2(margin, s.Panel.HeaderHeight + margin), new Vector2(margin, margin), 0f, ColorHelper.ForeColor,
+                 useBoldFont: bold, FontSize.Normal, TextAlignment.Left, s.Panel, string.Empty, Side.Bottom);
+         }
++        if(MissionPresets.Enabled)
++        {
++            s.Edit=new DWButton();
++            DWControl.SetupButton(ref s.Edit,"Coherent.EditMissionPreset",new Vector2(50,28),new Vector2(0,0),"Edit",(_,_)=>OpenPreset(renderer,s),false);
++            s.Edit.PostScene=true;s.Edit.Visible=true;s.Panel.AddControl(s.Edit);
++        }
+         s.RangeLabel = Row(Loc.T("DesignerRangeLabel"), "RangeLabel", true);
+         s.RangeValue = Row(string.Empty, "RangeValue", false);
+         s.LongestLabel = Row(Loc.T("DesignerLongestLabel"), "LongestLabel", true);
+@@ -279,23 +340,40 @@ static class DesignerMissionPanel
+             }
+         }
+         bool show = upgrade.Visible && choices != null && choices.Length > 1;
++        if(s.Panel.Visible!=show)
++        {
++            s.Panel.Visible=show;
++            LiveChannel.Get<Action<object>>("advanced-construction.refresh-editor-mission",1)?.Invoke(renderer);
++
++        }
+         if (show)
+         {
+             float margin = UserInterfaceHelper.Margin;
+             // the lit one is what the open design was made for (DesignLines.cs); a design with no record starts from the player's pick for the class
+             s.Role = role;
+-            string own = DesignLines.MissionOf(galaxy, design);
++            string own = DesignLines.KnownMission(galaxy, design);
++            own=LiveChannel.Get<Func<object,string>>("advanced-construction.editor-mission",1)?.Invoke(renderer) ?? own;
+             KeepMissionStance(renderer, design, own);
+             s.Chosen = own != null && Array.IndexOf(choices, own) >= 0 ? own : ShipMissions.Of(empire, role, design?.GetShipHull(galaxy)).Name;
+             if (!s.Names.SequenceEqual(choices))
+             {
+                 Fill(renderer, s, choices);
+             }
++            if(s.Edit!=null)s.Edit.Enabled=CanEdit(renderer);
+             s.Group.ToggleButton(Array.IndexOf(choices, s.Chosen));
+             s.Panel.SetSizeAndPosition(s.Panel.Size, new Vector2(upgrade.Position.X, upgrade.Position.Y + upgrade.Size.Y + margin));
++            // Hover hit areas use screen coordinates. Both the button group and its parent move after Fill.
++            float tipWidth = UserInterfaceHelper.CalculateScaledValue(320f);
++            for (int i = 0; i < s.Names.Length; i++)
++            {
++                var button = (DWButton)s.Group.Controls[i];
++                button.HoverTips.Clear();
++                button.AddHoverTip(ShipMissions.NameText(s.Names[i]), ShipMissions.HelpText(s.Names[i]),
++                    button.CalculateAbsoluteRectangle(), tipWidth, Side.Left);
++            }
+             UpdateRange(renderer, s);
+         }
+-        s.Panel.Visible = show;
++
+     }
+ 
+     // The game's Auto Design and Add New Design make the design through our mission and then set its tactics back to the class default, so the mission's stance is lost. Put it back the
+@@ -303,7 +381,10 @@ static class DesignerMissionPanel
+     // with no mission record, is never touched), and a stance that differs from the mission's is the player's choice.
+     static void KeepMissionStance(object renderer, Design design, string mission)
+     {
+-        TacticsStance? stance = ShipMissions.StanceOf(mission);
++        var empire=(Empire)fEmpire.GetValue(renderer);
++        var basis=ShipMissions.Definition(mission);
++        var hull=design?.GetShipHull((Galaxy)fGalaxy.GetValue(renderer));
++        var stance=basis!=null && hull!=null && empire!=null ? MissionPresets.Resolve(empire,empire.InferShipRole(hull),basis,hull).Stance : null;
+         if (stance == null || design?.Tactics == null || !DesignLines.TakeStancePending(design))
+         {
+             return;
+@@ -346,6 +427,8 @@ static class DesignerMissionPanel
+         s.Label.SetSizeAndPosition(new Vector2(labelWidth, button), new Vector2(margin, top));
+         s.Group.SetSizeAndPosition(new Vector2(inner - labelWidth - margin, height), new Vector2(margin + labelWidth + margin, top));
+         s.Group.DoLayout();
++        s.Edit?.SetSizeAndPosition(new Vector2(Math.Min(labelWidth,UserInterfaceHelper.CalculateScaledValue(64)),button),
++            new Vector2(margin,top+button+s.Group.ButtonGap));
+         // under the buttons, two rows: the combat range, then the weapon range and stance it follows from
+         float row = button * 0.8f;
+         float rangeTop = top + height + margin;
+@@ -385,6 +468,7 @@ static class DesignerMissionPanel
+             if (states.TryGetValue(__instance, out State s) && s.Panel.Visible)
+             {
+                 UpdateRange(__instance, s);
++                MissionPresetWindow.Active?.UpdateForecast();
+             }
+         }
+         catch (Exception ex)
+@@ -401,6 +485,7 @@ static class DesignerMissionPanel
+             if (states.TryGetValue(__instance, out State s) && s.Panel.Visible)
+             {
+                 UpdateRange(__instance, s);
++                MissionPresetWindow.Active?.UpdateForecast();
+             }
+         }
+         catch (Exception ex)
+@@ -409,27 +494,64 @@ static class DesignerMissionPanel
+         }
+     }
+ 
++    static bool CanEdit(object renderer) =>
++        AccessTools.Field(rendererType,"_DesignIsEditable")?.GetValue(renderer) is true &&
++        AccessTools.Field(rendererType,"_ForeignMode")?.GetValue(renderer) is false;
++
++    static void OpenPreset(object renderer,State s)
++    {
++        var choices=ChoicesOf(renderer,out var role,out var empire,out _,out var design);
++        if(!CanEdit(renderer)||choices==null||!choices.Contains(s.Chosen))return;
++        string name=s.Chosen;
++        bool Current()=>s.Panel.Visible&&CanEdit(renderer)&&ReferenceEquals(fDesign.GetValue(renderer),design)&&s.Chosen==name;
++        var draftValues=ReferenceEquals(s.PreviewDesign,design)&&s.PreviewName==name?s.PreviewValues:null;
++        new MissionPresetWindow(design.GetShipHull(empire.Galaxy),empire,role,ShipMissions.Definition(name),draftValues,s.PreviewScope,Current,()=>s.PreviewValues=null,(values,scope)=>
++        {
++            var previous=MissionPresets.Preview;
++            var previousEmpire=ShipDesignBlock.ManualEmpire;
++            try
++            {
++                MissionPresets.Preview=new(empire,role,name,values);
++                ShipDesignBlock.ManualEmpire=empire;
++                var bridge=LiveChannel.Get<Func<object,string,bool>>("advanced-construction.preview-editor-mission",1);
++                bool applied=bridge!=null?bridge(renderer,name):Regenerate(renderer,s,name,previewOnly:true);
++                if(applied){s.PreviewScope=scope;s.PreviewName=name;s.PreviewValues=values;s.PreviewDesign=(Design)fDesign.GetValue(renderer);}
++                return applied;
++            }
++            finally{MissionPresets.Preview=previous;ShipDesignBlock.ManualEmpire=previousEmpire;}
++        });
++    }
++
+     static void Picked(object renderer, State s, int index)
+     {
+         if (index < 0 || index >= s.Names.Length)
+         {
+             return;
+         }
++        var bridge=LiveChannel.Get<Func<object,string,bool>>("advanced-construction.preview-editor-mission",1);
++        if(bridge!=null)
++        {
++            if(CanEdit(renderer) && bridge(renderer,s.Names[index])){s.Chosen=s.Names[index];s.PreviewValues=null;}
++            s.Group.ToggleButton(Array.IndexOf(s.Names,s.Chosen));
++            return;
++        }
++        if(MissionPresets.Enabled && !CanEdit(renderer))return;
+         string was = s.Chosen;
+         s.Chosen = s.Names[index];
+-        Regenerate(renderer, s, was);
++        if(Regenerate(renderer, s, was))s.PreviewValues=null;
+     }
+ 
+     // was: the mission that was lit before the click, for the design's name (DesignNumbering.Renamed)
+-    static void Regenerate(object renderer, State s, string was)
++    static bool Regenerate(object renderer, State s, string was,bool previewOnly=false)
+     {
+         try
+         {
+             string[] choices = ChoicesOf(renderer, out _, out Empire empire, out Galaxy galaxy, out Design design);
+             if (choices == null || design == null)
+             {
+-                return;
++                return false;
+             }
++            if(previewOnly)design=design.Clone(galaxy);
+             ShipHull hull = design.GetShipHull(galaxy);
+             ShipMissions.Forced = s.Chosen;
+             Design made;
+@@ -445,7 +567,7 @@ static class DesignerMissionPanel
+             if (made == null)
+             {
+                 ModHost.Error($"the {s.Chosen} mission could not be designed on the {hull.Name} hull (the generator gave no design)");
+-                return;
++                return false;
+             }
+             // the name follows the mission when it is still the one we made (class code, and the major of a major.minor on an upgrade); the name box is not refreshed by the designer's update
+             string renamed = DesignNumbering.Renamed(empire, galaxy, design, fUpgrading?.GetValue(renderer) as Design, hull.Role, was, s.Chosen);
+@@ -459,7 +581,7 @@ static class DesignerMissionPanel
+                 }
+             }
+             // a mission owns the stance and nothing else in the tactics: the two stances are set (when the mission names one) and every other tactic the player has set is kept
+-            if (ShipMissions.StanceOf(s.Chosen) is TacticsStance stance && design.Tactics != null)
++            if (MissionPresets.Resolve(empire,empire.InferShipRole(hull),ShipMissions.Definition(s.Chosen),hull).Stance is TacticsStance stance && design.Tactics != null)
+             {
+                 design.Tactics.AttackRangeNormal = stance;
+                 design.Tactics.AttackRangeStronger = stance;
+@@ -470,6 +592,12 @@ static class DesignerMissionPanel
+             {
+                 design.Components = made.Components;
+                 DesignLines.Mark(design, s.Chosen);
++                if(previewOnly)
++                {
++                    var overview=AccessTools.Field(rendererType,"DesignSummary")?.GetValue(renderer) as ScrollablePanel;
++                    fDesign.SetValue(renderer,design);
++                    overview?.BindData(design);
++                }
+                 updateData.Invoke(renderer, new object[] { design });
+                 RebindTactics(renderer, design);
+             }
+@@ -495,10 +623,12 @@ static class DesignerMissionPanel
+                 }
+             }
+             ModHost.Detail($"designer: {hull.Name} regenerated for the {s.Chosen} mission");
++            return true;
+         }
+         catch (Exception ex)
+         {
+             ModHost.Failed("regenerating the design for a mission", ex);
++            return false;
+         }
+     }
+ }
+diff --git a/dll/DW2CoherentResearch/Entry.cs b/dll/DW2CoherentResearch/Entry.cs
+index 9392586..b525c9c 100644
+--- a/dll/DW2CoherentResearch/Entry.cs
++++ b/dll/DW2CoherentResearch/Entry.cs
+@@ -92,19 +92,43 @@ public static class Entry
+         EconomyBias.PeacePercent = s.Int("EconomyResearchPeacePercent", EconomyBias.PeacePercent, 0, 1000);
+         EconomyBias.StressPercent = s.Int("EconomyResearchStressPercent", EconomyBias.StressPercent, 0, 2000);
+         ClusterThrust.Percent = s.Int("ClusterResearchPercent", ClusterThrust.Percent, 0, 2000);
++        MissionPresets.Enabled=s.Bool("EditMissionPresets", false);
+         int turbo = s.Int("ResearchTurbo", 20, 1, 10000);
+         ResearchTurbo.Multiplier = s.Bool("ResearchTurboEnabled", false) ? turbo : 1;
+     }
+ 
+-    // Advanced Construction Mod keeps its own design series and retrofit targets through the same engine methods, so the two cannot both own them: when it is loaded, this mod's lineages stand
+-    // aside (the launcher loads it first: dw2modlauncher.json). Missions, weapon ranges and the component rules do not touch those methods and stay.
+-    static bool AdvancedConstructionLoaded() =>
+-        AppDomain.CurrentDomain.GetAssemblies().Any(a => a.GetName().Name == "AdvancedConstructionMod");
++    // Coherent can precede ACM (Ship Logistics loads between them). The active loader's Entries are
++    // the code modules scheduled for this launch, including ones it has not initialized yet.
++    static bool AdvancedConstructionLoaded()
++    {
++        var assemblies=AppDomain.CurrentDomain.GetAssemblies();
++        if(assemblies.Any(a=>a.GetName().Name=="AdvancedConstructionMod"))return true;
++        var loader=assemblies.FirstOrDefault(a=>a.GetName().Name=="DW2ModLauncher.Loader" && !a.IsDynamic);
++        if(loader==null || string.IsNullOrEmpty(loader.Location))return false;
++        var manifest=Path.Combine(Path.GetDirectoryName(loader.Location),"manifest.json");
++        if(!File.Exists(manifest))return false;
++        try
++        {
++            using var stream=File.OpenRead(manifest);
++            using var document=System.Text.Json.JsonDocument.Parse(stream);
++            if(document.RootElement.TryGetProperty("Entries",out var entries) && entries.ValueKind==System.Text.Json.JsonValueKind.Array)
++                foreach(var item in entries.EnumerateArray())
++                    if(item.TryGetProperty("EntryType",out var type) && type.ValueKind==System.Text.Json.JsonValueKind.String &&
++                        type.GetString()=="AdvancedConstructionMod.Entry.Init")return true;
++        }
++        catch(Exception ex) when(ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
++        {ModHost.Failed("reading the loader's active modules",ex);}
++        return false;
++    }
+ 
+     static void Install()
+     {
+         LauncherVersionCheck.Run(ModHost.ModDir, ModHost.Info);
+-        if (DesignLines.Enabled && AdvancedConstructionLoaded())
++        MissionChannels.Install();
++        bool acm=AdvancedConstructionLoaded();
++        if(DesignLines.Enabled && ShipDesignBlock.Enabled && acm)
++            LiveChannel.Provide<Action<object,int[]>>("coherent-research.review-unclassified",1,MissionChannels.ReviewUnclassified);
++        if (DesignLines.Enabled && acm)
+         {
+             DesignLines.Enabled = false;
+             ModHost.Info("design lineages are off: Advanced Construction Mod is loaded and keeps ship design series and retrofit targets itself");
+@@ -144,7 +168,7 @@ public static class Entry
+         ModHost.Feature("DesignAutomation", DesignLines.Enabled, DesignAutomation.Install);
+         ModHost.Feature("MissionDesigns", DesignLines.Enabled, MissionDesigns.Install);
+         ModHost.Feature("FleetTemplateMissions", DesignLines.Enabled, FleetTemplateMissions.Install);
+-        ModHost.Feature("DesignerMissions", DesignLines.Enabled, DesignerMissionPanel.Install);
++        ModHost.Feature("DesignerMissions", DesignLines.Enabled || MissionPresets.Enabled || acm, DesignerMissionPanel.Install);
+         ModHost.Feature("BaseSensors", true, BaseSensors.Install);
+         ModHost.Feature("Incumbent", true, Incumbent.Install);
+         ModHost.Feature("IonSlots", true, IonSlots.Install);
+diff --git a/dll/DW2CoherentResearch/FamilyPreference.cs b/dll/DW2CoherentResearch/FamilyPreference.cs
+index ad02df4..f125ffa 100644
+--- a/dll/DW2CoherentResearch/FamilyPreference.cs
++++ b/dll/DW2CoherentResearch/FamilyPreference.cs
+@@ -394,6 +394,17 @@ static class FamilyPreference
+                     componentSelectionFactors, research, policy, maximumSize, useFighterComponents, seekingWeaponsPreferenceFactor,
+                     preferredWeaponComponentIds, preferredWeaponComponentCategories, minimumArmorReactive, empire);
+ 
++            // Respect the player's explicit family among eligible, researched parts in this bay.
++            if (!useFighterComponents && componentCategory is (ComponentCategory.WeaponCloseIn or ComponentCategory.WeaponStandoff)
++                && ShipMissions.Last!=null && ShipMissions.Generating?.WeaponFamily is string family)
++            {
++                var withinFamily=all.GetComponentsForFamily(family);
++                if(withinFamily!=null && withinFamily.Any(c=>c!=null && Fits(c,maximumSize,false)))
++                {
++                    var preferred=Choose(withinFamily,primaryTaste,primaryProfile);
++                    if(preferred!=null){__result=preferred;return false;}
++                }
++            }
+             // the first of the policy's names (in order) that yields a part from the candidates, and the parts of its family
+             Component FirstYield(ComponentCategory category, List<string> names, out string familyChosen, out ComponentList partsChosen)
+             {
+diff --git a/dll/DW2CoherentResearch/MissionChannels.cs b/dll/DW2CoherentResearch/MissionChannels.cs
+new file mode 100644
+index 0000000..0abbfa0
+--- /dev/null
++++ b/dll/DW2CoherentResearch/MissionChannels.cs
+@@ -0,0 +1,176 @@
++using DistantWorlds.Types;
++
++namespace DW2CoherentResearch;
++
++// Only the owning player's published designs cross the mod boundary.
++static class MissionChannels
++{
++    internal static void Install()
++    {
++        LiveChannel.Provide<Func<object, int, string>>("coherent-research.design-mission", 1, Mission);
++        LiveChannel.Provide<Func<object, int, string>>("coherent-research.design-mission-text", 1, Text);
++        LiveChannel.Provide<Action<object, int, int>>("coherent-research.design-copy-mission", 1, Copy);
++        LiveChannel.Provide<Func<object, int, Dictionary<string,string>>>("coherent-research.hull-missions", 1, Choices);
++        LiveChannel.Provide<Func<object, int, string, object>>("coherent-research.preview-mission", 1, Preview);
++        LiveChannel.Provide<Func<object, int, string, bool>>("coherent-research.save-mission", 1, Save);
++    }
++
++    static Dictionary<string,string> Choices(object campaign, int hullId)
++    {
++        try
++        {
++            if (campaign is not Galaxy galaxy || hullId < 0 || hullId > short.MaxValue) return null;
++            var empire = galaxy.Empires.GetPlayer();
++            var hull = empire?.Research?.ResearchedShipHulls?.GetById((short)hullId);
++            if (hull == null) return null;
++            var role = empire.InferShipRole(hull);
++            return ShipMissions.ChoicesFor(role)?.Where(m => m != ShipMissions.Carrier || role == ShipRole.Carrier || ShipMissions.HasHangars(hull))
++                .ToDictionary(m => m, ShipMissions.NameText);
++        }
++        catch (Exception) { return null; }
++    }
++
++    internal static object Preview(object campaign, int hullId, string mission)
++    {
++        if (mission == null || Choices(campaign, hullId)?.ContainsKey(mission) != true) return null;
++        var previousEmpire = ShipDesignBlock.ManualEmpire;
++        var previousMission = ShipMissions.Forced;
++        var previousLast = ShipMissions.Last;
++        var previousGenerating=ShipMissions.Generating;
++        var previousBand = RangeBands.Current;
++        try
++        {
++            var galaxy = (Galaxy)campaign;
++            var empire = galaxy.Empires.GetPlayer();
++            var research = empire.Research;
++            ShipDesignBlock.ManualEmpire = empire;
++            ShipMissions.Forced = mission;
++            var hull = research.ResearchedShipHulls.GetById((short)hullId);
++            return Design.GenerateNewDesign(galaxy, galaxy.StarDate, empire, research, hull, research.ResearchedComponents,
++                research.ComponentBestValues, research.WeaponBestValues, research.SizeBestValues, empire.Policy.ComponentSelectionFactors, 1f, null);
++        }
++        catch (Exception ex) { ModHost.Failed("previewing a player-selected mission", ex); return null; }
++        finally
++        {
++            ShipMissions.Forced = previousMission;
++            ShipMissions.Last = previousLast;
++            ShipMissions.Generating=previousGenerating;
++            RangeBands.Current = previousBand;
++            ShipDesignBlock.ManualEmpire = previousEmpire;
++        }
++    }
++
++    static bool Save(object campaign, int id, string mission)
++    {
++        try
++        {
++            var galaxy = campaign as Galaxy;
++            var target = Owned(galaxy, id);
++            return target != null && mission != null && Choices(galaxy, target.HullId)?.ContainsKey(mission) == true
++                && DesignLines.SaveSelectedMission(galaxy, target, mission);
++        }
++        catch (Exception) { return false; }
++    }
++
++    static Design Owned(Galaxy galaxy, int id)
++    {
++        if (galaxy == null || id < 0 || id == Constants.DesignDesignId) return null;
++        var player = galaxy.Empires.GetPlayer();
++        var design = galaxy.Designs.GetById(id);
++        return design != null && player != null && design.EmpireId == player.EmpireId
++            && ReferenceEquals(player.Designs.GetById(id), design) ? design : null;
++    }
++
++    // ACM supplies only active projects outside its series on hulls for which it suppressed native automation.
++    internal static void ReviewUnclassified(object campaign,int[] ids)
++    {
++        if(campaign is not Galaxy galaxy || ids == null)return;
++        try
++        {
++            var empire=galaxy.Empires.GetPlayer();
++            if(empire==null || empire.Policy.GetAutomationLevel(AutomationCategory.ShipDesigns)!=AutomationLevel.Automated)return;
++            var sources=ids.Distinct().Select(id=>Owned(galaxy,id)).Where(d=>d!=null&&!d.Obsolete)
++                .Select(d=>(Design:d,Mission:DesignLines.KnownMission(galaxy,d))).Where(pair=>pair.Mission!=null)
++                .GroupBy(pair=>(pair.Design.HullId,pair.Mission))
++                .Select(group=>group.OrderByDescending(pair=>pair.Design.StarDate).ThenByDescending(pair=>pair.Design.DesignId).First()).ToArray();
++            foreach(var (source,mission) in sources)UpgradeUnclassified(galaxy,empire,source,mission);
++        }
++        catch(Exception ex){ModHost.Failed("reviewing unclassified mission designs",ex);}
++    }
++
++    static void UpgradeUnclassified(Galaxy galaxy,Empire empire,Design source,string mission)
++    {
++        if(Preview(galaxy,source.HullId,mission) is not Design next)return;
++        static IEnumerable<(int,int)> Equipment(Design d)=>d.Components.Where(c=>!c.IsEmpty)
++            .Select(c=>((int)c.ComponentId,(int)c.Level)).OrderBy(c=>c.Item1).ThenBy(c=>c.Item2);
++        if(Equipment(source).SequenceEqual(Equipment(next)))return;
++        next.Name=TextHelper.GenerateUpgradedDesignName(source.Name);
++        next.StarDate=galaxy.StarDate;
++        next.AllowAutoRetrofit=source.AllowAutoRetrofit;
++        next.UpgradeDesignId=source.UpgradeDesignId;
++        if(source.Tactics!=null)next.Tactics=source.Tactics.Clone();
++        if(!Design.CheckDesignIsValid(galaxy,empire,next))return;
++        next.DesignId=galaxy.Designs.GetNextId();
++        int oldTarget=source.UpgradeDesignId;
++        bool committed=false;
++        try
++        {
++            galaxy.Designs.Add(next);
++            empire.Designs.Add(next);
++            if(!DesignLines.SaveSelectedMission(galaxy,next,mission))return;
++            source.Obsolete=true;
++            if(oldTarget!=int.MinValue)source.UpgradeDesignId=next.DesignId;
++            empire.ReviewLatestDesignsPerRole();
++            empire.ReviewLatestDesignsPerShipHull();
++            committed=true;
++        }
++        finally
++        {
++            if(!committed)
++            {
++                source.Obsolete=false;
++                source.UpgradeDesignId=oldTarget;
++                if(ReferenceEquals(empire.Designs.GetById(next.DesignId),next))empire.Designs.CheckRemove(next);
++                if(ReferenceEquals(galaxy.Designs.GetById(next.DesignId),next))galaxy.Designs.CheckRemove(next);
++                DesignLines.Forget(galaxy,next.DesignId);
++                empire.ReviewLatestDesignsPerRole();empire.ReviewLatestDesignsPerShipHull();
++            }
++        }
++    }
++
++    static string Mission(object campaign, int id)
++    {
++        try
++        {
++            var galaxy = campaign as Galaxy;
++            var design = Owned(galaxy, id);
++            return design == null ? null : DesignLines.KnownMission(galaxy, design);
++        }
++        catch (Exception) { return null; }
++    }
++
++    static string Text(object campaign, int id)
++    {
++        try
++        {
++            var mission = Mission(campaign, id);
++            return mission == null ? null : ShipMissions.NameText(mission);
++        }
++        catch (Exception) { return null; }
++    }
++
++    static void Copy(object campaign, int sourceId, int targetId)
++    {
++        try
++        {
++            if (campaign is not Galaxy galaxy || sourceId == targetId) return;
++            var target = Owned(galaxy, targetId);
++            if (target == null) return;
++            var sourceMission = Mission(galaxy, sourceId);
++            var choices = ShipMissions.ChoicesFor(target.GetRole(galaxy));
++            if (sourceMission == null || choices == null || Array.IndexOf(choices, sourceMission) < 0) return;
++            DesignLines.KeepInheritedMission(galaxy, target, sourceMission);
++        }
++        catch (Exception ex) { ModHost.Failed("copying the mission of an upgraded design", ex); }
++    }
++}
+diff --git a/dll/DW2CoherentResearch/MissionPresetWindow.cs b/dll/DW2CoherentResearch/MissionPresetWindow.cs
+new file mode 100644
+index 0000000..83de4e3
+--- /dev/null
++++ b/dll/DW2CoherentResearch/MissionPresetWindow.cs
+@@ -0,0 +1,279 @@
++using System.Globalization;
++using Scope=DW2CoherentResearch.MissionPresets.Scope;
++using DistantWorlds.Types;
++using DistantWorlds.UI;
++using Stride.Core.Mathematics;
++using Stride.Graphics;
++
++namespace DW2CoherentResearch;
++
++sealed class MissionPresetWindow
++{
++    internal static MissionPresetWindow Active;
++    readonly DWPanel panel=new();
++    readonly float scale;
++    readonly DWLabel status;
++    Action dismissChoices;
++    DWButton choiceAnchor;
++    Action refreshForecast;
++    internal void UpdateForecast()=>refreshForecast?.Invoke();
++    float S(float v)=>v*scale;
++
++    internal MissionPresetWindow(ShipHull hull,Empire empire,ShipRole role,ShipMissions.Mission basis,MissionPresets.Values draft,Scope draftScope,Func<bool> stillOpen,Action saved,Func<MissionPresets.Values,Scope,bool> preview)
++    {
++        Active?.Close();
++        Active=this;
++        scale=Math.Min(UserInterfaceHelper.CalculateScaledValue(100)/100f,
++            Math.Min((UserInterfaceController.ScreenWidth-20f)/510,(UserInterfaceController.ScreenHeight-20f)/482));
++        panel.Name="Coherent.MissionPreset";panel.HeaderText=$"{role} — {ShipMissions.NameText(basis.Name)}";
++        panel.SetFeatureDefaults();panel.AddCloseButtonToHeader=false;panel.UseOverlay=true;panel.UseRenderedBorder=true;
++        panel.PostScene=true;panel.Layer=15010;panel.Visible=true;panel.Opacity=panel.TargetOpacity=1;
++        var bg=ColorHelper.GalactopediaPanelBackColor;bg.A=255;panel.BackColor=bg;
++        panel.Initialize(FontSize.Normal,FontSize.Normal,null);panel.HeaderHeight=S(30);
++        panel.SetSizeAndPosition(new(S(510),S(482)),new((UserInterfaceController.ScreenWidth-S(510))/2,(UserInterfaceController.ScreenHeight-S(482))/2));
++        UserInterfaceController.AddCustomControl(panel);UserInterfaceController.AddModalLayer(panel.Layer);
++        bool HasRule(Scope level)=>MissionPresets.Stored(empire,role,hull,basis.Name,level)!=null;
++        var scope=draft!=null?draftScope:HasRule(Scope.Hull)?Scope.Hull:Scope.Class;
++        MissionPresets.Values Load(Scope level)=>MissionPresets.Effective(empire,role,hull,basis.Name,level)??MissionPresets.Values.From(basis);
++        var values=draft??Load(scope);
++        var pending=new Dictionary<Scope,MissionPresets.Values>();
++        var reach=Percent("Preferred range (%)",42,values.Reach);
++        var share=Percent("Point-defense bays (%)",79,values.PointDefenseShare);
++        var reserve=Percent("Bays reserved for other weapons (%)",116,values.HoldBack);
++        var hangars=Percent("Carrier hangars retained (%)",153,values.CarrierHangars);
++        var stances=new TacticsStance?[]{null,TacticsStance.Aggressive,TacticsStance.Neutral,TacticsStance.Cautious};
++        var stance=values.Stance;
++        var stanceButton=Select("Combat stance",190,stances,stance,x=>x?.ToString()??"Automatic (no override)",x=>stance=x);
++        var any=values.PointDefenseAnyBay;
++        var anyButton=Select("Allow PD in larger bays",227,new[]{false,true},any,x=>x?"Yes":"No",x=>any=x);
++        var fleet=values.FleetParts;
++        var fleetButton=Select("Prioritize fleet support systems",264,new[]{false,true},fleet,x=>x?"Yes":"No",x=>fleet=x);
++        var families=empire.Research.ResearchedComponents.Where(c=>c?.Definition!=null &&
++            c.Definition.Category is ComponentCategory.WeaponCloseIn or ComponentCategory.WeaponStandoff)
++            .Select(c=>c.Definition.Family).Append(values.WeaponFamily).Where(f=>!string.IsNullOrEmpty(f)).Distinct().Order().Prepend(null).ToArray();
++        var family=values.WeaponFamily;
++        var familyButton=Select("Preferred main weapon family",301,families,family,x=>x??"Empire policy",x=>family=x);
++        status=Label("",16,376,478,47);
++        MissionPresets.Values ReadValues()=>new(Read(reach,values.Reach),stance,Read(share,values.PointDefenseShare),any,
++            Read(reserve,values.HoldBack),Read(hangars,values.CarrierHangars),fleet,family);
++        var weapons=hull.ComponentBays.GetBaysByType(ComponentBayType.Weapon);
++        var hangarBays=hull.ComponentBays.GetBaysByType(ComponentBayType.Hangar);
++        var pdCount=Label("",232,79,77,30);
++        var otherCount=Label("",232,116,77,30);
++        var hangarCount=Label("",232,153,77,30);
++        (string,string,string,string,TacticsStance?,bool,bool,string)? last=null;
++        string lastShare=share.Text,lastReserve=reserve.Text;
++        void SyncShares()
++        {
++            bool pdChanged=share.Text!=lastShare, reserveChanged=reserve.Text!=lastReserve;
++            if((pdChanged||reserveChanged) && TryPercent(share.Text,out float pd) && TryPercent(reserve.Text,out float other)
++                && pd>=0 && pd<=100 && other>=0 && other<=100 && pd+other>100)
++            {
++                if(pdChanged && (!reserveChanged || UserInterfaceController.ActiveTextBox!=reserve))reserve.Text=Format((100-pd)/100);
++                else share.Text=Format((100-other)/100);
++            }
++            lastShare=share.Text;lastReserve=reserve.Text;
++        }
++        refreshForecast=()=>
++        {
++            SyncShares();
++            var key=(reach.Text,share.Text,reserve.Text,hangars.Text,stance,any,fleet,family);
++            if(last==key)return;
++            last=key;
++            pdCount.Text=otherCount.Text=hangarCount.Text="(—)";
++            otherCount.HoverTips.Clear();
++            var previous=MissionPresets.Preview;
++            try
++            {
++                MissionPresets.Preview=new(empire,role,basis.Name,ReadValues());
++                if(MissionChannels.Preview(empire.Galaxy,hull.ShipHullId,basis.Name) is not Design projected)return;
++                var guns=projected.Components.Where(c=>!c.IsEmpty && weapons.GetById(c.ComponentBayId)!=null).ToList();
++                int pd=guns.Count(c=>c.Component.Category==ComponentCategory.WeaponIntercept);
++                pdCount.Text=$"({pd} of {weapons.Count})";
++                otherCount.Text=$"({(int)Math.Ceiling(weapons.Count * ReadValues().HoldBack)} of {weapons.Count})";
++                if(hangarBays.Count>0)
++                    hangarCount.Text=$"({projected.Components.Count(c=>!c.IsEmpty && hangarBays.GetById(c.ComponentBayId)!=null)} of {hangarBays.Count})";
++                else hangarCount.Text="";
++                var names=guns.GroupBy(c=>c.Component.Name).Select(group=>$"{group.Key} × {group.Count()}");
++                otherCount.AddHoverTip("Projected weapons",string.Join("\n",names),otherCount.CalculateAbsoluteRectangle(),S(360),Side.Left);
++            }
++            catch(FormatException){ }
++            finally{MissionPresets.Preview=previous;}
++        };
++        string ScopeLabel(Scope level)=>level switch {Scope.Global=>"All classes",Scope.Class=>$"Class: {role}",_=>$"Hull: {hull.Name}"};
++        DWButton inherit=null;
++        inherit=Button("Inherit",138,340,92,()=>
++        {
++            if(!stillOpen()){Close();return;}
++            if(!MissionPresets.Save(empire,role,hull,basis.Name,scope,null)){status.Text="Could not clear the campaign rule.";return;}
++            saved();pending.Remove(scope);
++            RefreshFields(Load(scope));
++            UpdateForecast();
++        });
++        void ShowSource()
++        {
++            inherit.Enabled=HasRule(scope);
++            string source=HasRule(scope)?ScopeLabel(scope):scope==Scope.Hull && HasRule(Scope.Class)?ScopeLabel(Scope.Class):
++                scope!=Scope.Global && HasRule(Scope.Global)?ScopeLabel(Scope.Global):"Coherent default";
++            status.Text=$"Current rule: {source}. Save preset writes to {ScopeLabel(scope)}.";
++        }
++        void RefreshFields(MissionPresets.Values selected)
++        {
++            values=selected;
++            reach.Text=Format(values.Reach);share.Text=Format(values.PointDefenseShare);
++            reserve.Text=Format(values.HoldBack);hangars.Text=Format(values.CarrierHangars);
++            stance=values.Stance;any=values.PointDefenseAnyBay;fleet=values.FleetParts;family=values.WeaponFamily;
++            stanceButton.Text=stance?.ToString()??"Automatic (no override)";anyButton.Text=any?"Yes":"No";
++            fleetButton.Text=fleet?"Yes":"No";familyButton.Text=family??"Empire policy";
++            ShowSource();
++        }
++        Select("Apply rule to",340,Enum.GetValues<Scope>(),scope,ScopeLabel,next=>
++        {
++            if(next==scope)return;
++            try{var current=ReadValues();if(current==Load(scope))pending.Remove(scope);else pending[scope]=current;}catch(FormatException ex){status.Text=ex.Message;return;}
++            scope=next;RefreshFields(pending.GetValueOrDefault(scope)??Load(scope));
++        },()=>ScopeLabel(scope));
++        ShowSource();
++        UpdateForecast();
++        void Submit(bool save)
++        {
++            if(!stillOpen()){Close();return;}
++            try
++            {
++                SyncShares();
++                var edit=ReadValues();
++                if(!preview(edit,scope)){status.Text="The current design cannot be previewed.";return;}
++                if(save && !MissionPresets.Save(empire,role,hull,basis.Name,scope,edit))
++                {saved();status.Text="Preview applied. The campaign preset could not be saved. Reopen Edit to retry.";return;}
++                if(save)saved();
++                Close();
++            }
++            catch(FormatException ex){status.Text=ex.Message;}
++            catch(Exception ex){ModHost.Failed("editing mission preset",ex);status.Text="Could not apply this operation.";}
++        }
++        Button("Reset",16,435,85,()=>{RefreshFields(MissionPresets.Values.From(basis));UpdateForecast();});
++        Button("Apply preview",108,435,118,()=>Submit(false));
++        Button("Save preset",233,435,122,()=>Submit(true));
++        Button("Cancel",362,435,123,Close);
++    }
++    static string Format(float fraction)=>(fraction*100).ToString("0.##",CultureInfo.CurrentCulture);
++    DWTextBox Percent(string name,float y,float value)
++    {
++        Label(name.Replace("Bays reserved for other weapons","Other weapons reserve"),16,y,214,30);
++        var b=new DWTextBox{Name=name,Text=Format(value),PostScene=true,Visible=true};
++        b.Initialize(FontSize.Normal,FontSize.Normal,null);b.SetSizeAndPosition(new(S(100),S(30)),new(S(310),S(y)));panel.AddControl(b);
++        void Step(int step)
++        {
++            if(TryPercent(b.Text,out float n))
++                b.Text=Math.Clamp(n+step,0,100).ToString("0.##",CultureInfo.CurrentCulture);
++            UpdateForecast();
++        }
++        void Arrow(bool up)
++        {
++            float top=up?y:y+16;
++            var image=up?DrawingHelper.UpArrow:DrawingHelper.DownArrow;
++            var arrow=Button(image==null?(up?"+":"-"):"",414,top,24,()=>Step(up?5:-5),14);
++            arrow.Image=image;
++            arrow.ImageFillFactor=.7f;
++        }
++        Arrow(true);
++        Arrow(false);
++        return b;
++    }
++    static bool TryPercent(string text,out float value)=>
++        float.TryParse(text.Replace(',','.'),NumberStyles.Float,CultureInfo.InvariantCulture,out value) && float.IsFinite(value);
++    static float Read(DWTextBox box,float original)
++    {
++        if(box.Text==Format(original))return original;
++        if(!TryPercent(box.Text,out var n)||n<0||n>100)
++            throw new FormatException("Enter a percentage from 0 to 100.");
++        return n/100;
++    }
++    DWButton Select<T>(string name,float y,T[] options,T current,Func<T,string> display,Action<T> select,Func<string> selectedText=null)
++    {
++        Label(name,16,y,selectedText==null?280:112,30);
++        DWButton button=null;
++        button=Button(display(current),310,y,180,()=>
++        {
++            ShowChoices(button,options.Select(display).ToArray(),i=>
++            {
++                select(options[i]);button.Text=selectedText?.Invoke()??display(options[i]);UpdateForecast();
++            });
++        });
++        return button;
++    }
++    // Keep option rows in the active modal's own hit-test tree.
++    void ShowChoices(DWButton anchor,string[] options,Action<int> pick)
++    {
++        bool toggleOff=ReferenceEquals(anchor,choiceAnchor);
++        dismissChoices?.Invoke();
++        if(toggleOff || options.Length==0)return;
++        choiceAnchor=anchor;
++        const int perPage=6;
++        const float rowHeight=27;
++        float x=anchor.Position.X/scale,y=anchor.Position.Y/scale,width=anchor.Size.X/scale;
++        int rowCount=Math.Min(options.Length,perPage);
++        float height=rowHeight*(rowCount+(options.Length>perPage?1:0));
++        float top=y+anchor.Size.Y/scale;
++        if(S(top+height)>panel.Size.Y-S(8))top=y-height;
++        var covered=panel.Controls.Where(c=>c.Visible && c!=anchor &&
++            c.Position.X<S(x+width) && c.Position.X+c.Size.X>S(x) &&
++            c.Position.Y<S(top+height) && c.Position.Y+c.Size.Y>S(top)).ToArray();
++        foreach(var control in covered)control.Visible=false;
++        var temporary=new List<DWButton>();
++        dismissChoices=()=>
++        {
++            dismissChoices=null;choiceAnchor=null;
++            foreach(var control in temporary){control.Visible=false;panel.Controls.Remove(control);}
++            foreach(var control in covered)control.Visible=true;
++        };
++        DWButton Make(string text,float left,float rowY,float w,Action action)
++        {
++            var control=Button(text,left,rowY,w,action,rowHeight,"Preset.Choice."+temporary.Count);
++            temporary.Add(control);return control;
++        }
++        int page=Math.Max(0,Array.IndexOf(options,anchor.Text))/perPage;
++        var rows=new List<DWButton>();
++        DWButton back=null,next=null;
++        for(int i=0;i<rowCount;i++)
++        {
++            int slot=i;
++            rows.Add(Make("",x,top+i*rowHeight,width,()=>
++            {
++                int index=page*perPage+slot;
++                dismissChoices();pick(index);
++            }));
++        }
++        if(options.Length>perPage)
++        {
++            float footer=top+rowCount*rowHeight;
++            back=Make("<",x,footer,width/2,()=>{page--;Bind();});
++            next=Make(">",x+width/2,footer,width/2,()=>{page++;Bind();});
++        }
++        void Bind()
++        {
++            for(int i=0;i<rows.Count;i++)
++            {
++                int index=page*perPage+i;
++                rows[i].Visible=index<options.Length;
++                if(rows[i].Visible)rows[i].Text=options[index];
++            }
++            if(back!=null){back.Enabled=page>0;next.Enabled=(page+1)*perPage<options.Length;}
++        }
++        Bind();
++    }
++    DWLabel Label(string text,float x,float y,float w,float h)=>DWLabel.Generate(text,"Preset.Label."+x+"."+y,new(S(x),S(y)),new(S(w),S(h)),0,
++        ColorHelper.ForeColor,false,FontSize.Normal,TextAlignment.Left,panel,string.Empty,Side.Left);
++    DWButton Button(string text,float x,float y,float w,Action click,float height=30,string id=null)
++    {
++        var b=new DWButton();DWControl.SetupButton(ref b,id??"Preset."+x+"."+y,new(S(w),S(height)),new(S(x),S(y)),text,(_,_)=>click(),false);
++        b.Visible=true;b.PostScene=true;panel.AddControl(b);return b;
++    }
++    internal void Close()
++    {
++        if(Active!=this)return;
++        if(UserInterfaceController.ActiveTextBox?.Ancestors.Contains(panel)==true)UserInterfaceController.ActiveTextBox=null;
++        dismissChoices?.Invoke();
++        panel.Visible=false;UserInterfaceController.RemoveModalLayer(panel.Layer);UserInterfaceController.RemoveCustomControl(panel);Active=null;
++    }
++}
+diff --git a/dll/DW2CoherentResearch/MissionPresets.cs b/dll/DW2CoherentResearch/MissionPresets.cs
+new file mode 100644
+index 0000000..7e4c2de
+--- /dev/null
++++ b/dll/DW2CoherentResearch/MissionPresets.cs
+@@ -0,0 +1,79 @@
++using System.Collections.Concurrent;
++using System.Runtime.CompilerServices;
++using System.Text.Json;
++using DistantWorlds.Types;
++
++namespace DW2CoherentResearch;
++
++static class MissionPresets
++{
++    internal static bool Enabled;
++    internal sealed record Values(float Reach, TacticsStance? Stance, float PointDefenseShare, bool PointDefenseAnyBay,
++        float HoldBack, float CarrierHangars, bool FleetParts, string WeaponFamily)
++    {
++        internal static Values From(ShipMissions.Mission m) => new(m.Reach,m.Stance,m.PointDefenseShare,m.PointDefenseAnyBay,
++            m.HoldBack,m.CarrierHangars,m.FleetParts,m.WeaponFamily);
++        internal bool Valid => new[]{Reach,PointDefenseShare,HoldBack,CarrierHangars}.All(n=>n>=0 && n<=1)
++            && (Stance is null or TacticsStance.Aggressive or TacticsStance.Neutral or TacticsStance.Cautious)
++            && (WeaponFamily?.Length??0)<=128;
++        internal ShipMissions.Mission Apply(ShipMissions.Mission m) => new() {Name=m.Name, Code=m.Code,
++            Reach=Reach,Stance=Stance,PointDefenseShare=PointDefenseShare,PointDefenseAnyBay=PointDefenseAnyBay,
++            HoldBack=HoldBack,CarrierHangars=CarrierHangars,FleetParts=FleetParts,WeaponFamily=WeaponFamily,EditedPreset=true};
++    }
++
++    internal enum Scope { Global, Class, Hull }
++    // Cache individual records (including absence), never a resolved child: parent changes apply immediately.
++    sealed record Entry(Values Value);
++    static readonly ConditionalWeakTable<Empire,ConcurrentDictionary<string,Entry>> cache=new();
++    static string Key(Empire empire,ShipRole role,ShipHull hull,string name,Scope scope)
++    {
++        string target=scope switch {Scope.Global=>"all",Scope.Hull=>$"hull.{hull.ShipHullId}",_=>role.ToString()};
++        return $"preset.v1.{empire.EmpireId}.{target}.{name}";
++    }
++    internal sealed record Override(Empire Empire,ShipRole Role,string Name,Values Values);
++    [ThreadStatic] internal static Override Preview;
++
++    internal static Values Stored(Empire empire,ShipRole role,ShipHull hull,string name,Scope scope)
++    {
++        if(scope==Scope.Hull && hull==null)return null;
++        var key=Key(empire,role,hull,name,scope);
++        var entries=cache.GetOrCreateValue(empire);
++        if(entries.TryGetValue(key,out var cached))return cached.Value;
++        var get=ProfileChoices.Getter;
++        if(get==null)return null;
++        var raw=get(empire.Galaxy,"coherent-research",key);
++        Values value=null;
++        if(!string.IsNullOrEmpty(raw))
++        {
++            try {var parsed=JsonSerializer.Deserialize<Values>(raw);if(parsed?.Valid==true)value=parsed;}
++            catch(JsonException ex){ModHost.Failed("reading mission preset",ex);}
++        }
++        return entries.GetOrAdd(key,new Entry(value)).Value;
++    }
++    internal static Values Effective(Empire empire,ShipRole role,ShipHull hull,string name,Scope scope)
++    {
++        Values Read(Scope level)=>Stored(empire,role,hull,name,level);
++        if(scope==Scope.Hull && Read(Scope.Hull) is {} exact)return exact;
++        if(scope!=Scope.Global && Read(Scope.Class) is {} group)return group;
++        return Read(Scope.Global);
++    }
++    internal static ShipMissions.Mission Resolve(Empire empire,ShipRole role,ShipMissions.Mission basis,ShipHull hull)
++    {
++        if(!Enabled || empire?.IsPlayer!=true)return basis;
++        if(Preview is {} edit && ReferenceEquals(edit.Empire,empire) && role==edit.Role && basis.Name==edit.Name)
++            return edit.Values.Apply(basis);
++        return Effective(empire,role,hull,basis.Name,Scope.Hull)?.Apply(basis)??basis;
++    }
++    internal static bool Save(Empire empire,ShipRole role,ShipHull hull,string name,Scope scope,Values value)
++    {
++        var set=ProfileChoices.Setter;
++        var get=ProfileChoices.Getter;
++        if(!Enabled || empire?.IsPlayer!=true || value?.Valid==false || set==null || get==null)return false;
++        var key=Key(empire,role,hull,name,scope);
++        var raw=value==null?string.Empty:JsonSerializer.Serialize(value);
++        set(empire.Galaxy,"coherent-research",key,raw);
++        if((get(empire.Galaxy,"coherent-research",key)??string.Empty)!=raw)return false;
++        cache.GetOrCreateValue(empire)[key]=new Entry(value);
++        return true;
++    }
++}
+diff --git a/dll/DW2CoherentResearch/PointDefenseBays.cs b/dll/DW2CoherentResearch/PointDefenseBays.cs
+index 8b5f7c1..a53bbaf 100644
+--- a/dll/DW2CoherentResearch/PointDefenseBays.cs
++++ b/dll/DW2CoherentResearch/PointDefenseBays.cs
+@@ -96,7 +96,7 @@ static class PointDefenseBays
+         ShipMissions.Mission mission = ShipMissions.Apply(__result, empire, inferredRole, shipHull);
+         ComponentBayList weaponBays = shipHull.ComponentBays.GetBaysByType(ComponentBayType.Weapon);
+         int total = weaponBays.Count;
+-        if (total < 2)
++        if (total < (mission.EditedPreset ? 1 : 2))
+         {
+             return;
+         }
+@@ -125,16 +125,23 @@ static class PointDefenseBays
+         }
+         // never more than the usable bays can hold (a turret with no bay would leave its weapon bay empty), and always a share of the bays held back
+         // for real weapons (a High level or a hull of small bays would otherwise turn nearly the whole weapon fit into turrets)
+-        int reserve = Math.Max(1, (int)Math.Ceiling(total * mission.HoldBack));
++        int reserve = Math.Max(mission.EditedPreset ? 0 : 1, (int)Math.Ceiling(total * mission.HoldBack));
+         wanted = Math.Min(Math.Min(wanted, Math.Max(before, total - reserve)), Math.Max(before, usable));
+-        if (wanted > before)
++        if (mission.EditedPreset)
++        {
++            wanted = Math.Min(Math.Min(total - reserve, usable), (int)Math.Ceiling(total * mission.PointDefenseShare));
++            for (int added = before; added < wanted; added++) TakeOne(__result);
++            __result.WeaponInterceptCount = (byte)wanted;
++            __result.WeaponCloseInCount += (byte)Math.Max(0, before - wanted);
++        }
++        else if (wanted > before)
+         {
+             int needed = wanted - before;
+             while (needed > 0 && TakeOne(__result))
+             {
+                 needed--;
+             }
+-            __result.WeaponInterceptCount = (byte)(wanted - needed);
++            __result.WeaponInterceptCount = (byte)(mission.EditedPreset && mission.PointDefenseShare == 1f && reserve == 0 ? wanted : wanted - needed);
+         }
+ 
+         // The generator trims an oversize design from the category with the lowest (priority - part count), and a destroyer's point defense (priority
+diff --git a/dll/DW2CoherentResearch/RangeBands.cs b/dll/DW2CoherentResearch/RangeBands.cs
+index 1ee1bc9..789a607 100644
+--- a/dll/DW2CoherentResearch/RangeBands.cs
++++ b/dll/DW2CoherentResearch/RangeBands.cs
+@@ -102,7 +102,7 @@ static class RangeBands
+         int best = inBand.Select(p => p.Level).DefaultIfEmpty(0).Max();
+         foreach (Part part in inBand)
+         {
+-            if (!Obsolete(part, best, gap))
++            if (!Obsolete(part, best, gap) || part.Component.Definition.Family == ShipMissions.Generating?.WeaponFamily)
+             {
+                 result.Add(part.Component);
+             }
+@@ -146,6 +146,11 @@ static class RangeBands
+         List<Part> parts = Parts(research.ResearchedComponents, research, seekingOnly: isBase && !ShipMissions.BaseDirectFire(empire, role));
+         int biggest = bays[^1];
+         parts.RemoveAll(p => p.Size > biggest);
++        if (mission.WeaponFamily is string preferred)
++        {
++            var matching = parts.Where(p => p.Component.Definition.Family == preferred).ToList();
++            if (matching.Count > 0) parts = matching;
++        }
+         if (parts.Count == 0)
+         {
+             ModHost.Detail($"range band {empire.Name} {role} {mission.Name}: no researched weapon fits the bays (largest {biggest}); no band");
+diff --git a/dll/DW2CoherentResearch/ShipDesignBlock.cs b/dll/DW2CoherentResearch/ShipDesignBlock.cs
+index e783cde..eb10fb6 100644
+--- a/dll/DW2CoherentResearch/ShipDesignBlock.cs
++++ b/dll/DW2CoherentResearch/ShipDesignBlock.cs
+@@ -14,9 +14,10 @@ static class ShipDesignBlock
+     public static bool Enabled = true;
+ 
+     [ThreadStatic] static bool designingOff;
++    [ThreadStatic] internal static Empire ManualEmpire;
+ 
+     // true when the empire's ship designs get this mod's rules (no empire: the rules apply)
+-    public static bool Applies(Empire empire) => empire == null || Enabled;
++    public static bool Applies(Empire empire) => empire == null || Enabled || ReferenceEquals(empire, ManualEmpire);
+ 
+     // true while a design is being generated for an empire with the switch off
+     public static bool DesigningOff => designingOff;
+@@ -36,12 +37,16 @@ static class ShipDesignBlock
+     }
+ 
+     // parameter names must match the original method's
+-    public static void Enter(Empire empire) => designingOff = !Applies(empire);
++    public static void Enter(Empire empire, out bool __state)
++    {
++        __state = designingOff;
++        designingOff = !Applies(empire);
++    }
+ 
+     // a Harmony finalizer must return the exception it was given
+-    public static Exception Leave(Exception __exception)
++    public static Exception Leave(Exception __exception, bool __state)
+     {
+-        designingOff = false;
++        designingOff = __state;
+         return __exception;
+     }
+ }
+diff --git a/dll/DW2CoherentResearch/ShipMissions.cs b/dll/DW2CoherentResearch/ShipMissions.cs
+index c295fa5..047f907 100644
+--- a/dll/DW2CoherentResearch/ShipMissions.cs
++++ b/dll/DW2CoherentResearch/ShipMissions.cs
+@@ -48,6 +48,8 @@ static class ShipMissions
+         public TacticsStance? Stance;
+         // a range mission (RangeBands.cs): the share of its longest weapon's range the ship fights at (0: no band)
+         public float Reach;
++        public string WeaponFamily;
++        internal bool EditedPreset;
+     }
+ 
+     // Races: the mission each race has for a class when nothing is picked (race name, case-insensitive; a race or class not listed has none, so the class's first mission)
+@@ -68,7 +70,9 @@ static class ShipMissions
+     [ThreadStatic] internal static string Forced;
+ 
+     // whether the design being made on this thread may put point defense in a bay of any size (its mission says so)
+-    internal static bool PointDefenseAnyBay => Last != null && table.Value.Missions.TryGetValue(Last, out Mission m) && m.PointDefenseAnyBay;
++    [ThreadStatic] internal static Mission Generating;
++    internal static bool PointDefenseAnyBay => Last != null && Generating?.PointDefenseAnyBay == true;
++    internal static Mission Definition(string name) => name!=null && table.Value.Missions.TryGetValue(name,out var m)?m:null;
+ 
+     public static void Install(HarmonyLib.Harmony harmony, Action<string> log)
+     {
+@@ -93,10 +97,12 @@ static class ShipMissions
+     public static void Designed(Design __result)
+     {
+         string name = Last;
++        var mission=Generating;
++        Generating=null;
+         Last = null;
+         RangeBands.Current = null;
+         DesignLines.Mark(__result, name);
+-        if (name == null || __result?.Tactics == null || !table.Value.Missions.TryGetValue(name, out Mission mission) || mission.Stance == null)
++        if (name == null || __result?.Tactics == null || mission?.Stance == null)
+         {
+             return;
+         }
+@@ -343,7 +349,7 @@ static class ShipMissions
+         {
+             name = Forced;
+         }
+-        return table.Value.Missions.TryGetValue(name, out Mission mission) ? mission : new Mission();
++        return table.Value.Missions.TryGetValue(name, out Mission mission) ? MissionPresets.Resolve(empire,role,mission,hull) : new Mission();
+     }
+ 
+     // Applies the empire's mission for the class to a template the game just made; returns the mission (for the point defense, which the other patch counts). Template patches only:
+@@ -353,6 +359,7 @@ static class ShipMissions
+         Mission mission = Of(empire, role, hull);
+         // a class with no missions (mining, research, resort, civilian stations and ships) gets the plain template and no mission tag: its design must not read as a line ship
+         Last = ChoicesFor(role) == null ? null : mission.Name;
++        Generating=Last==null?null:mission;
+         // the weapons are not split by a mission: its range picks them (RangeBands.cs)
+         if (mission.FleetParts)
+         {
+diff --git a/dll/DW2CoherentResearch/dw2modlauncher.hooks.json b/dll/DW2CoherentResearch/dw2modlauncher.hooks.json
+index 7cfb94c..719b1d5 100644
+--- a/dll/DW2CoherentResearch/dw2modlauncher.hooks.json
++++ b/dll/DW2CoherentResearch/dw2modlauncher.hooks.json
+@@ -3,6 +3,38 @@
+   "modVersion": "1.0.42",
+   "gameVersion": "1.3.8.7",
+   "hooks": [
++    {
++      "target": "DistantWorlds2.ShipDesignRenderer:Update(DistantWorlds.Types.CameraInfo,System.Single,System.Single,System.Single)",
++      "kind": "postfix",
++      "effect": "observes",
++      "signature": "() -> System.Void",
++      "priority": 400,
++      "why": "refresh the forecast after typed edits in the open preset form"
++    },
++    {
++      "target": "DistantWorlds2.ShipDesignRenderer:DoSave(System.Boolean)",
++      "kind": "prefix",
++      "effect": "observes",
++      "signature": "(System.Object __instance, System.Boolean closeScreen, ref System.Action __state) -> System.Void",
++      "priority": 400,
++      "why": "capture the preview and editing scope before Save and Exit"
++    },
++    {
++      "target": "DistantWorlds2.ShipDesignRenderer:DoSave(System.Boolean)",
++      "kind": "postfix",
++      "effect": "observes",
++      "signature": "(System.Boolean __runOriginal, System.Action __state) -> System.Void",
++      "priority": 400,
++      "why": "save the previewed preset after publication"
++    },
++    {
++      "target": "DistantWorlds2.ShipDesignRenderer:DrawComponentBays(Stride.Rendering.RenderDrawContext)",
++      "kind": "postfix",
++      "effect": "observes",
++      "signature": "(ref Stride.Core.Mathematics.Vector3 ____HoveredBayScreenPosition, ref DistantWorlds.Types.ComponentBay ___HoveredComponentBay) -> System.Void",
++      "priority": 400,
++      "why": "hide native bay hover labels while the preset editor is open"
++    },
+     {
+       "target": "DistantWorlds.Types.ComponentStats:CalculateHyperdriveEfficiency()",
+       "kind": "prefix",
+diff --git a/dll/DW2CoherentResearch/settings.schema.json b/dll/DW2CoherentResearch/settings.schema.json
+index c626508..b3a2888 100644
+--- a/dll/DW2CoherentResearch/settings.schema.json
++++ b/dll/DW2CoherentResearch/settings.schema.json
+@@ -31,6 +31,7 @@
+     {"key": "StairStepReportSkipped", "type": "bool", "label": "Include skipped redesigns", "description": "The redesign check messages also say when a comparison does not lead to a new design, not only when one is made. Off: you only hear of the redesigns that happen. Has no effect while those messages are off.", "default": false}
+   ],
+   "Ship Design Tweaks": [
++    {"key":"EditMissionPresets","type":"bool","label":"Edit auto-design presets","description":"Show Edit beside the designer mission buttons. Customize mission rules for each hull role in the current campaign.","default":false},
+     {"key": "ShipDesign", "type": "bool", "label": "Enable", "description": "Your ship designs (automated designs, and upgrades of your ships) follow your race's component and weapon preferences, bay placement, point defense, carrier hangars and strike craft rules. Off: the game designs your ships alone.", "default": true},
+     {"key": "ComponentTechLevel", "type": "bool", "label": "Show tech level on parts", "description": "A part's panel (in the ship designer, and when inspecting a ship or a design) starts its title with the part's tech level, such as \"T8 Networked Sensor Array\". Takes effect when the game starts.", "default": true},
+     {"key": "IonWeaponBonusPercent", "type": "int", "label": "Ion weapon bonus (%)", "description": "When a race picks a weapon, an ion weapon's score is raised by this percentage, so a slightly weaker ion part still beats a non-ion one. 0 = no preference for ion.", "min": 0, "max": 100, "default": 25},
+diff --git a/dll/DW2CoherentResearch/status.en.json b/dll/DW2CoherentResearch/status.en.json
+index f58eb47..3aee800 100644
+--- a/dll/DW2CoherentResearch/status.en.json
++++ b/dll/DW2CoherentResearch/status.en.json
+@@ -231,7 +231,7 @@
+   "DesignerMissionsLabel": "designer missions",
+   "DesignerMissionsText": "the ship designer has a mission panel under Retrofit Path: click a mission to make the open design again for it",
+   "DesignerMissionHeader": "Mission",
+-  "DesignerMissionLabel": "Design for:",
++  "DesignerMissionLabel": "Auto Design for:",
+   "DesignerRangeLabel": "Combat Band",
+   "DesignerRangeValue": "{Min} to {Max}",
+   "DesignerRangeNone": "no weapons",

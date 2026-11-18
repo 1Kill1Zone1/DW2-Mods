@@ -16,18 +16,24 @@ internal static partial class Checks
         DWTextBox Share()=>Dialog().Controls.OfType<DWTextBox>().Single(b=>b.Name=="Point-defense bays (%)");
         void Choose(DWButton button,string text)
         {
+            string presetTitle=Dialog().HeaderText;
             click(button);
+            Require(button.Visible && Dialog().HeaderText==presetTitle && Dialog().Controls.OfType<DWLabel>().Any(c=>c.Visible&&c.Text=="Combat stance"),"selector stays anchored in preset form");
             var row=Dialog().Controls.OfType<DWButton>().Single(b=>b.Name.StartsWith("Preset.Choice.") && b.Visible && b.Text==text);
+            Require(Math.Abs(row.Position.X-button.Position.X)<1 && row.Size.X<=button.Size.X+1,"option aligns with its field");
             click(row);
             Require(button.Text==text,"native preset dropdown selects "+text);
         }
-        void Tick()=>AccessTools.Method(type,"Updated").Invoke(null,[renderer]);
+        void Tick()=>AccessTools.Method(type,"PresetEditorTick").Invoke(null,null);
         var original=source.Components;
         var top=(DWButton)renderer.UpgradePanel.Controls.Single(c=>c.Name=="ACM.Specialization");
         Require(!top.Visible,"lower mission selector suppresses duplicate upper selector");
 
         click(edit);
         Require(Dialog().Controls.OfType<DWTextBox>().Count()==4,"native preset editor exposes four percentage fields");
+        object?[] hover=[new Stride.Core.Mathematics.Vector3(25,40,1),source.GetShipHull(galaxy).ComponentBays[0]];
+        AccessTools.Method(type,"HideBayHover").Invoke(null,hover);
+        Require(Equals(hover[0],Stride.Core.Mathematics.Vector3.Zero) && hover[1]==null,"modal hides native 3D bay label");
         Share().Text="50";
         var up=(DWButton)Dialog().Controls.Single(c=>c.Name=="Preset.414.79");
         var down=(DWButton)Dialog().Controls.Single(c=>c.Name=="Preset.414.95");
@@ -41,6 +47,12 @@ internal static partial class Checks
         Require(pdCount.Text=="(4 of 4)","live four-turret frigate forecast before Apply: "+pdCount.Text);
         reserve.Text="50";Tick();
         Require(pdCount.Text!="(4 of 4)" && ReferenceEquals(original,source.Components),"reserve change updates live forecast and preserves source");
+        Require(Share().Text=="50","raising reserve to 50 trims PD to 50");
+        Share().Text="75";Tick();
+        Require(reserve.Text=="25" && pdCount.Text=="(3 of 4)","raising PD to 75 trims reserve to 25");
+        Share().Text="0";reserve.Text="88,3";Tick();
+        Require(pdCount.Text=="(0 of 4)" && Dialog().Controls.OfType<DWLabel>().Single(c=>c.Name=="Preset.Label.232.116").Text=="(4 of 4)","explicit zero PD and decimal reserve update live");
+        Submit("Reset");Require(reserve.Text!="88,3" && Dialog().Visible,"reset restores the built-in draft in place");
         Share().Text="65";Submit("Cancel");click(edit);Require(Share().Text!="65","cancel discards unsaved changes");
         var title=Dialog().HeaderText;
         Share().Text="65";
@@ -88,13 +100,27 @@ internal static partial class Checks
         }
         var sibling=new ShipHull{ShipHullId=unchecked((short)(hull.ShipHullId+1))};
         Require(Resolved(role,hull)==.75f && Resolved(role,sibling)==.65f && Resolved(ShipRole.Escort,sibling)==.30f,"hull, sibling and another class resolve independently");
-        Submit("Inherit");click(edit);
-        Require(Resolved(role,hull)==.65f && ScopeButton().Text==classScope,"clearing hull reveals class");
-        Submit("Inherit");click(edit);
+        Submit("Inherit");
+        Require(Resolved(role,hull)==.65f && ScopeButton().Text==hullScope && Share().Text=="65","clearing hull shows inherited class values in place");
+        ChangeScope(classScope);Submit("Inherit");
         Require(Share().Text=="30" && Resolved(role,hull)==.30f,"clearing class reveals global");
-        ChangeScope("All classes");Submit("Inherit");click(edit);
+        ChangeScope("All classes");Submit("Inherit");
         Require(!Dialog().Controls.OfType<DWButton>().Single(b=>b.Text=="Inherit").Enabled && Resolved(role,hull)==(float)AccessTools.Field(definition!.GetType(),"PointDefenseShare").GetValue(definition)!,"clearing last rule restores Coherent default");
-        Submit("Cancel");panel.Visible=false;UserInterfaceController.RemoveCustomControl(panel);
+        Submit("Cancel");
+        var missionGroup=panel.Controls.OfType<ToggleButtonGroup>().Single();
+        click(missionGroup.Controls.OfType<DWButton>().Single(b=>b.Text=="Carrier"));
+        var blaster=empire.Research.ResearchedComponents.First(c=>c.Definition.Name.StartsWith("Maxos Blaster")).Definition.Family;
+        foreach(string preferred in new[]{beam,blaster})
+        {
+            click(edit);
+            Choose((DWButton)Dialog().Controls.Single(c=>c.Name=="Preset.310.301"),preferred);
+            Share().Text="0";Submit("Apply preview");
+            var carrier=(Design)AccessTools.Field(renderer.GetType(),"_Design").GetValue(renderer)!;
+            var main=carrier.Components.Where(c=>!c.IsEmpty && c.Component.Category is ComponentCategory.WeaponCloseIn or ComponentCategory.WeaponStandoff).ToArray();
+            Require(main.Length>0 && main.All(c=>c.Component.Family==preferred) &&
+                !carrier.Components.Any(c=>!c.IsEmpty && c.Component.Category==ComponentCategory.WeaponIntercept),"Carrier equips "+preferred+" and zero PD");
+        }
+        panel.Visible=false;UserInterfaceController.RemoveCustomControl(panel);
         DW2ModLauncher.Loader.LiveChannels.Channels.TryGetValue("advanced-construction.refresh-editor-mission",out var refresh);
         ((Action<object>)refresh!)(renderer);
     }

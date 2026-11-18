@@ -104,9 +104,11 @@ internal static partial class Checks
                     display.Patch(method,prefix:new HarmonyMethod(typeof(Checks),nameof(SkipNativeEditorClose)));
                 display.Patch(AccessTools.Method(typeof(ScaledRenderer),"ShowDesignsDialog",[typeof(Design)]),prefix:new HarmonyMethod(typeof(Checks),nameof(CaptureNativeDesignsDialog)));
                 var lookup=(Func<object,int,string>)DW2ModLauncher.Loader.LiveChannels.Channels["coherent-research.design-mission"];
-                foreach(string mode in new[]{"Locked","Cancel","Edit","Copy","Upgrade"})
+                var modes=new List<string>{"Locked","Cancel","Edit","Copy","Upgrade"};
+                if(Environment.GetEnvironmentVariable("ACM_TEST_MISSION_PRESETS")=="1")modes.Add("CarrierCopy");
+                foreach(string mode in modes)
                 {
-                    var draft=mode is "Copy" or "Upgrade"?h1.Clone(galaxy):h1;
+                    var draft=mode is "Copy" or "Upgrade" or "CarrierCopy"?h1.Clone(galaxy):h1;
                     if(!ReferenceEquals(draft,h1)){draft.DesignId=Constants.DesignDesignId;draft.Name="Manual frigate "+mode;}
                     var r=Renderer(draft,mode=="Upgrade"?h1:null,mode!="Locked");
                     r.DesignSummary=new ScrollablePanel();r.DesignSummary.BindGalaxy(galaxy,empire);r.DesignSummary.BindData(draft);
@@ -156,7 +158,68 @@ internal static partial class Checks
                         else
                         {
                             if(mode=="Copy")ConfirmName(r,"Separate Pickets");
-                            r.DoSave(false);
+                            bool presetSave=mode=="Copy" && Environment.GetEnvironmentVariable("ACM_TEST_MISSION_PRESETS")=="1";
+                            if(presetSave)
+                            {
+                                var panelType=AccessTools.TypeByName("DW2CoherentResearch.DesignerMissionPanel");
+                                AccessTools.Method(panelType,"Build").Invoke(null,[r]);
+                                var lower=(DWPanel)UserInterfaceController.CustomControls["MissionPanel"];
+                                ClickAt(lower.Controls.OfType<ToggleButtonGroup>().Single().Controls.OfType<DWButton>().Single(b=>b.Text=="Picket"));
+                                ClickAt(lower.Controls.OfType<DWButton>().Single(b=>b.Name=="Coherent.EditMissionPreset"));
+                                var form=(DWPanel)UserInterfaceController.CustomControls["Coherent.MissionPreset"];
+                                form.Controls.OfType<DWTextBox>().Single(b=>b.Name=="Preferred range (%)").Text="23";
+                                ClickAt(form.Controls.OfType<DWButton>().Single(b=>b.Text=="Apply preview"));
+                                session=Session(r);
+                                Require(string.IsNullOrEmpty(getSaved(galaxy,"coherent-research",$"preset.v1.{empire.EmpireId}.Frigate.Picket")),"preview alone does not publish a rule");
+                            }
+                            if(mode=="CarrierCopy")
+                            {
+                                wanted="Carrier";
+                                var panelType=AccessTools.TypeByName("DW2CoherentResearch.DesignerMissionPanel");
+                                DWPanel Open(ShipDesignRenderer editor)
+                                {
+                                    if(UserInterfaceController.CustomControls.ContainsKey("MissionPanel"))
+                                        UserInterfaceController.RemoveCustomControl(UserInterfaceController.CustomControls["MissionPanel"]);
+                                    AccessTools.Field(typeof(ScaledRenderer),"_RendererShipDesignPostScene").SetValue(ui.Renderer,editor);
+                                    AccessTools.Method(panelType,"Build").Invoke(null,[editor]);
+                                    var lower=(DWPanel)UserInterfaceController.CustomControls["MissionPanel"];
+                                    ClickAt(lower.Controls.OfType<ToggleButtonGroup>().Single().Controls.OfType<DWButton>().Single(b=>b.Text=="Carrier"));
+                                    ClickAt(lower.Controls.OfType<DWButton>().Single(b=>b.Name=="Coherent.EditMissionPreset"));
+                                    return (DWPanel)UserInterfaceController.CustomControls["Coherent.MissionPreset"];
+                                }
+                                var form=Open(r);
+                                string beams=empire.Research.ResearchedComponents.First(c=>c.Definition.Name.StartsWith("Particle Beam")).Definition.Family;
+                                ClickAt(form.Controls.Single(c=>c.Name=="Preset.310.301"));
+                                ClickAt(form.Controls.OfType<DWButton>().Single(b=>b.Visible && b.Text==beams && b.Name.StartsWith("Preset.Choice.")));
+                                form.Controls.OfType<DWTextBox>().Single(b=>b.Name=="Point-defense bays (%)").Text="0";
+                                ClickAt(form.Controls.OfType<DWButton>().Single(b=>b.Text=="Apply preview"));
+                                session=Session(r);
+                                r.DoSave(true);
+                                Require(session.Published && lookup(galaxy,session.Draft.DesignId)=="Carrier","Save and Exit publishes Carrier");
+                                var switchTo=AccessTools.Method(typeof(ScaledRenderer),"SwitchToShipDesign");
+                                display.Patch(switchTo,prefix:new HarmonyMethod(typeof(Checks),nameof(CaptureNativeCopiedDesign)));
+                                AccessTools.Field(typeof(ScaledRenderer),"_Galaxy").SetValue(ui.Renderer,galaxy);
+                                AccessTools.Field(typeof(ScaledRenderer),"_PlayerEmpire").SetValue(ui.Renderer,empire);
+                                nativeCopiedDesign=null;
+                                AccessTools.Method(typeof(ScaledRenderer),"CopyAsNewDesignClickEvent").Invoke(ui.Renderer,[null,new DWEventArgs(session.Draft)]);
+                                Require(nativeCopiedDesign!=null && !ReferenceEquals(nativeCopiedDesign,session.Draft),"Copy as New opens a separate Carrier");
+                                var copied=Renderer(nativeCopiedDesign!);
+                                AccessTools.Field(typeof(ShipDesignRenderer),"_Renderer").SetValue(copied,ui.Renderer);
+                                AccessTools.Field(typeof(ShipDesignRenderer),"_Ship").SetValue(copied,ship);
+                                copied.DesignSummary=new ScrollablePanel();copied.DesignSummary.BindGalaxy(galaxy,empire);copied.DesignSummary.BindData(nativeCopiedDesign!);
+                                var reopened=Open(copied);
+                                Require(((DWButton)reopened.Controls.Single(c=>c.Name=="Preset.310.301")).Text==beams &&
+                                    reopened.Controls.OfType<DWTextBox>().Single(b=>b.Name=="Point-defense bays (%)").Text=="0" &&
+                                    ((DWLabel)reopened.Controls.Single(c=>c.Name=="Preset.Label.232.79")).Text=="(0 of 4)","copied Carrier restores Beams and forecasts zero before Apply");
+                                var guns=Session(copied).Draft.Components.Where(c=>!c.IsEmpty && c.Component.Category is ComponentCategory.WeaponCloseIn or ComponentCategory.WeaponStandoff or ComponentCategory.WeaponIntercept).ToArray();
+                                Require(guns.Length>0 && guns.All(c=>c.Component.Family==beams),"copied Carrier regenerates only Beams in its main/PD bays");
+                                Console.WriteLine($"Carrier Save and Exit -> Copy as New -> Carrier: {guns.Length} main weapons from {beams}, 0 PD of 4");
+                                ClickAt(reopened.Controls.OfType<DWButton>().Single(b=>b.Text=="Cancel"));
+                                UserInterfaceController.RemoveCustomControl(Panel(copied));
+                            }
+                            else r.DoSave(presetSave);
+                            if(presetSave)
+                                Require(getSaved(galaxy,"coherent-research",$"preset.v1.{empire.EmpireId}.Frigate.Picket")?.Contains("0.23")==true,"native Save and Exit publishes previewed Picket rule");
                             if(!session.Published||lookup(galaxy,session.Draft.DesignId)!=wanted)
                             {
                                 object?[] validationArgs=[galaxy,empire,session.Draft,false,false,null,null];
@@ -512,7 +575,7 @@ internal static partial class Checks
                 UserInterfaceController.RemoveCustomControl(Panel(failedTargetRenderer));
                 var obsoleteRenderer=NativeEditor(nativeOrigin);var obsoletePanel=Panel(obsoleteRenderer);
                 ClickAt(Button(obsoletePanel,"ACM.TargetChoice"));
-                Require(NativeWindow.Active is SeriesChoiceWindow,"target picker remains accessible while the edited project is obsolete");NativeWindow.Active?.Close();
+                Require(popup.Visible,"native target dropdown remains accessible while the edited project is obsolete");popup.Visible=false;
                 ClickAt(Button(obsoletePanel,"ACM.UseCurrentTarget"));
                 Require(((DWLabel)obsoletePanel.Controls.Single(c=>c.Name=="ACM.SeriesSummary")).Text.Contains("become Active")&&nativeOrigin.Obsolete,"Use this obsolete project visibly previews activation without applying it");
                 DesignerIntegration.CloseEditor(obsoleteRenderer);UserInterfaceController.RemoveCustomControl(obsoletePanel);

@@ -23,7 +23,7 @@ internal sealed class TransferWindow:NativeWindow
         source=session.ClassId??throw new ArgumentException("Choose a source series first.");
         ids=wholeSeries?session.Classes.DesignClasses.Where(p=>p.Value==source).Select(p=>p.Key).ToArray():[session.Draft.DesignId];
         roles=session.ExpectedFacts.Where(f=>ids.Contains(f.DesignId)).Select(f=>f.Role).Distinct().Order().ToArray();
-        Label("ACM.TransferSource","Moving from series: "+session.ClassName+" | "+ids.Length+" saved project(s).\n"+(wholeSeries?"All generations move, including obsolete projects.":"Only this project and the ships using it change series."),S(12),S(40),Panel.Size.X-S(24),S(38));
+        Label("ACM.TransferSource",(wholeSeries?$"Move all {ids.Length} designs from {session.ClassName}, including obsolete versions.":$"Move {session.Draft.Name} from {session.ClassName}. Other versions stay in {session.ClassName}."),S(12),S(40),Panel.Size.X-S(24),S(38));
         destinationButton=Button("ACM.TransferDestination","1. Choose receiving series...",S(12),S(82),Panel.Size.X-S(24),ChooseDestination);
         float columnWidth=(Panel.Size.X-S(36))/2;
         Label("ACM.TransferRemainingHelp","2. Projects left behind: their retrofit target",S(12),S(118),columnWidth,S(28));
@@ -57,7 +57,7 @@ internal sealed class TransferWindow:NativeWindow
     private void ChooseDestination()
     {
         _=new SeriesChoiceWindow("CHOOSE RECEIVING SERIES",session.Classes.Classes.Where(p=>p.Key!=source).OrderBy(p=>p.Value,StringComparer.OrdinalIgnoreCase).Select(p=>(p.Value,(Action)(()=>{destination=p.Key;targets.Clear();Bind();}))),Reopen,
-            "Choose which existing series receives the projects. This is not a ship-design choice. If the list is empty, create another series in the editor first.");
+            "Select the series to move these designs into. If the list is empty, create a second series in the design editor first.");
     }
     private void ChooseTarget(int slot,bool dest)
     {
@@ -76,9 +76,9 @@ internal sealed class TransferWindow:NativeWindow
     private void Bind()
     {
         destinationButton.Text=destination==null?"1. Choose receiving series...":"1. Receiving series: "+session.Classes.Classes[destination];apply.Enabled=destination!=null;
-        Tip(destinationButton,"Receiving series","Start here: choose the series that will receive these projects. The buttons below choose ship designs for future Retrofit, not the receiving series.");
+        Tip(destinationButton,"Receiving series","Choose the new series for the designs listed above.");
         Tip(apply,"Review before Save","This stages the complete transfer plan and returns to the editor. Save / Apply publishes it; editor Cancel discards it. Ship equipment and current orders do not change.");
-        guidance.Text=destination==null?"First choose the receiving series in step 1 above. Then the two target selectors become available.":
+        guidance.Text=destination==null?"First choose the series these designs should belong to.":
             "Left: target for projects that stay in "+session.Classes.Classes[source]+". Right: target after joining "+session.Classes.Classes[destination]+". Equipment and orders stay unchanged.";
         previousRoles.Visible=nextRoles.Visible=roles.Length>2;previousRoles.Enabled=rolePage>0;nextRoles.Enabled=(rolePage+1)*2<roles.Length;
         ConstructionSnapshot? plan=null;
@@ -101,14 +101,14 @@ internal sealed class TransferWindow:NativeWindow
             Tip(sourceTargets[i],"Projects left behind",left+"\n"+(!remains?"All projects of this role are being moved; no source target is needed. The empty series is retained.":"Choose a target for projects remaining in "+session.Classes.Classes[source]+". Automatic latest follows the newest compatible active project. No target pauses future Retrofit."));
             Tip(destinationTargets[i],"Projects being moved",right+"\nChoose the future Retrofit project after joining the receiving series. This does not order immediate Retrofit. Select the receiving series above first.");
         }
-        if(plan==null){preview.SetText("No transfer is staged.\n1. Choose a receiving series above.\n2. Review the targets for projects left behind and projects being moved.\n3. Review every change below, then use the plan. Save / Apply in the editor commits it.");if(destination==null)Message("Step 1 is required. The target buttons below it are unavailable until a receiving series is selected.");return;}
+        if(plan==null){preview.SetText("After you choose a series, the preview will list the affected designs and ships.");if(destination==null)Message("");return;}
         var before=session.CapturePlan();
         try
         {
             if(!session.StageTransfer(ids,destination!,out var error,targets)){Message(error,true);preview.SetText("Transfer unavailable: "+error+" Choose a compatible destination target above.");apply.Enabled=false;return;}
             var projected=session.Projection();
             if(!projected.Preview.Accepted){Message(projected.Preview.Error,true);apply.Enabled=false;}
-            else Message("Preview only. Use transfer plan returns to the editor; Save / Apply publishes every change together. No ship is sent to a yard.");
+            else Message("Choose Use transfer plan, then save in the design editor to complete the move. Ships keep their equipment and current orders.");
             // Live lists can contain empty slots, unfinished ships and stale empire membership.
             // Count only current owned ships with an actual project; preview never repairs native lists.
             var counts=session.Galaxy.Ships.Where(s=>s!=null&&!s.IsDestroyed&&s.EmpireId==session.Empire.EmpireId)

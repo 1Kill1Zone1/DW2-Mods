@@ -272,14 +272,24 @@ internal static class DesignerIntegration
     {
         if(!StageInput(renderer,out _))return;var session=Session(renderer);if(session?.ClassId==null)return;
         var projection=session.Projection();
-        _=new SeriesChoiceWindow("TARGET: "+session.ClassName+" / "+session.Draft.GetRole(session.Galaxy),
-            SeriesChoiceWindow.Targets(session,projection.Preview.Next??session.Classes,session.ClassId,session.Role,projection.Facts,id=>
+        var choices=SeriesChoiceWindow.Targets(session,projection.Preview.Next??session.Classes,session.ClassId,session.Role,projection.Facts,id=>
             {
                 var before=session.CapturePlan();bool useDraft=id==projection.TargetId&&!session.HasSavedIdentity;
                 if(!session.SetTarget(id,useDraft,out var error)||!session.Preview(session.Sources).Accepted)
                 {error??=session.Preview(session.Sources).Error;session.RestorePlan(before);ShowError(error??"Target is unavailable.");return;}
                 Refresh(renderer);
-            }));
+            }).ToArray();
+        var state=Editors.GetOrCreateValue(renderer);
+        var button=state.TargetButton!;
+        var popup=(PopupList?)AccessTools.Field(typeof(ShipDesignRenderer),"PopupList").GetValue(null);
+        if(popup==null){ShowError("The retrofit target list is unavailable.");return;}
+        popup.BindData(choices.Select(c=>c.Text).ToList(),index=>
+        {
+            if(ReferenceEquals(state.InputSession,session)&&!state.Saving&&index>=0&&index<choices.Length)choices[index].Pick();
+        },UserInterfaceController.ScreenWidth,UserInterfaceController.ScreenHeight,button.Size.X);
+        state.Popup=popup;popup.ExtraData=state;popup.PostScene=true;
+        popup.SetPositionAndSize(button.CalculateAbsoluteRectangle(),button.Size.X,Side.Bottom,Vector2.Zero);
+        popup.Visible=true;
     }
     private static void UseCurrentTarget(ShipDesignRenderer renderer)
     {
@@ -432,8 +442,8 @@ internal static class DesignerIntegration
         try
         {
             var session=Session(renderer);if(session==null)return;
-            if(!StageInput(renderer,out var error))return;
-            if(session.ClassId==null){stateFocus(renderer);return;}
+            if(!StageInput(renderer,out var error)){ShowError(error!);return;}
+            if(session.ClassId==null){stateFocus(renderer);ShowError("Choose a series or enter its name and press OK. Then open Edit sources to select the designs that can retrofit to this project.");return;}
             _=new SourcesWindow(session,()=>Refresh(renderer));
         }
         catch(Exception ex){ShowError(ex.Message);}
