@@ -584,6 +584,19 @@ internal static partial class Checks
             finally{presentation.UnpatchAll(presentation.Id);}
         }
         finally{fake.UnpatchAll(fake.Id);NativeWindow.Active?.Close();}
+        foreach(var role in new[]{ShipRole.ResearchStation,ShipRole.SpaceportSmall,ShipRole.ConstructionShip})
+        {
+            var own=empire.Designs.First(d=>d.GetRole(galaxy)==role);
+            var draft=own.Clone(galaxy);
+            var editor=Renderer(draft,own);
+            var panel=Panel(editor);
+            foreach(var c in panel.Controls.Where(c=>c.Name.StartsWith("ACM.")).ToArray())panel.Controls.Remove(c);
+            AccessTools.Method(typeof(DesignerIntegration),"AfterBind").Invoke(null,[editor]);
+            Require(panel.Controls.Single(c=>c.Name=="ACM.SeriesName").Visible,"rebind restores the series input for "+role);
+            AccessTools.Method(typeof(DesignerIntegration),"AfterBind").Invoke(null,[editor]);
+            Require(panel.Controls.Count(c=>c.Name=="ACM.SeriesName")==1,"repeated binding keeps one series input for "+role);
+            UserInterfaceController.RemoveCustomControl(panel);
+        }
         UserInterfaceController.RemoveCustomControl(nativePanel);
         popupField.SetValue(null,priorPopup);
         Require(UserInterfaceController.CustomControls.Count==baselineControls&&UserInterfaceController.ModalOverlayLayers.Count==baselineLayers,"all test editor and modal controls cleaned up");

@@ -24,6 +24,7 @@ internal static class DesignsSeriesColumn
 
     internal static void Install(Harmony harmony)
     {
+        DesignsColumnResize.Install(harmony);
         foreach(string method in new[]{"Initialize","BindDesignsList"})
             harmony.Patch(AccessTools.DeclaredMethod(typeof(DesignsDialog),method),
                 postfix:new HarmonyMethod(typeof(DesignsSeriesColumn),nameof(Attach)));
@@ -55,6 +56,7 @@ internal static class DesignsSeriesColumn
         if(SortField.GetValue(__instance) is string key && (key==FieldName||key==SpecField))
             headings.SetButtonSort(headings.Controls.IndexOf(key==SpecField?layout.SpecHeader!:layout.SeriesHeader!), (bool)SortDirection.GetValue(__instance)!);
     }
+    internal static bool HeaderLayout(DWButtonStrip strip,out Layout? layout)=>Headers.TryGetValue(strip,out layout);
     private static void AfterHeaderLayout(DWButtonStrip __instance)
     {if(Headers.TryGetValue(__instance,out var layout))layout.ArrangeHeader(__instance);}
     private static void AfterSelection(DesignsDialog __instance)
@@ -223,11 +225,25 @@ internal static class DesignsSeriesColumn
             int index=HitFields.FindIndex(f=>string.Equals(f.Name,"Name",StringComparison.OrdinalIgnoreCase));
             if(index<0||index+1>=HitFields.Count||!string.Equals(HitFields[index+1].Name,"Role",StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Steam Designs Name/Role columns did not match the Series layout.");
-            Name=HitFields[index];Series=new(FieldName,96,true,Name.HorizontalPadding);HitFields.Insert(index+1,Series);
-            Spec=new(SpecField,80,true,Name.HorizontalPadding);HitFields.Insert(index+2,Spec);
+            Name=HitFields[index];Series=new(FieldName,72,true,Name.HorizontalPadding);HitFields.Insert(index+1,Series);
+            Spec=new(SpecField,56,true,Name.HorizontalPadding);HitFields.Insert(index+2,Spec);
             NativeFields[index].Size=Name.Size+Series.Size+Spec.Size;
-            foreach(var pair in new[]{("Role",96f),("ShipHull",118f),("DateCreated",80f)})
+            foreach(var pair in new[]{("Role",120f),("ShipHull",142f),("DateCreated",80f)})
             {HitFields.Single(f=>f.Name==pair.Item1).Size=pair.Item2;NativeFields.Single(f=>f.Name==pair.Item1).Size=pair.Item2;}
+            defaults=HitFields.Select(f=>f.Size).ToArray();
+            DesignsColumnResize.Restore(HitFields);SyncWidths();
+        }
+        private readonly float[] defaults;
+        internal bool Visible=>dialog.Visible;
+        internal void ResetWidths()
+        {
+            for(int i=0;i<defaults.Length;i++)HitFields[i].Size=defaults[i];
+            SyncWidths();ArrangeHeader(dialog.ColumnHeadings);
+        }
+        internal void SyncWidths()
+        {
+            foreach(var native in NativeFields)
+                native.Size=native.Name=="Name"?Name.Size+Series.Size+Spec.Size:HitFields.First(f=>f.Name==native.Name).Size;
         }
 
         internal string Text(Design design,Galaxy galaxy,Empire empire)

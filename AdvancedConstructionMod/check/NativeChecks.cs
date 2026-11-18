@@ -109,6 +109,8 @@ internal static partial class Checks
         throwAfterHead=true;
         ExpectFailure(()=>Write(store,changed),"failure after header write reported");
         Require(getSaved(galaxy,Owner,prefix+".head")==head && Serialized(Read(store)!)==Serialized(state),"partial header commit rolls back to prior complete graph");
+        // This fixture seeded storage directly after load. Drop the pre-seed registry before probing it.
+        ConstructionCampaigns.Forget(galaxy);
         Entry.Init();Entry.Init();
         SaveAdmissionChecks(galaxy,empire,unclassified);
         if(selectedOnly)

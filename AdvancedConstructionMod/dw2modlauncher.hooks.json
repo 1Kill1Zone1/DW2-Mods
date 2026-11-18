@@ -233,27 +233,6 @@
         ]
       },
       "reviewed": "2026-11-16"
-    },
-    {
-      "target": "DistantWorlds.Types.Empire:CreateShipDesigns(System.Int64,System.Boolean)",
-      "partner": "Coherent R&D",
-      "self": {
-        "hash": "326ffc225105",
-        "facts": [
-          "finalizer | changes-result | prio 400 | before [] | after [] | (System.Exception __exception, AdvancedConstructionMod.SeriesAutomation+Generation __state) -> System.Exception",
-          "prefix | skips-original | prio 400 | before [] | after [] | (DistantWorlds.Types.Empire __instance, System.Boolean forceCreate, ref AdvancedConstructionMod.SeriesAutomation+Generation __state) -> System.Boolean"
-        ]
-      },
-      "other": {
-        "hash": "71bd5cb3c3ba",
-        "facts": [
-          "finalizer | changes-result | prio 400 | before [] | after [] | (DistantWorlds.Types.Empire __instance, DistantWorlds.Types.EmpirePolicy __state, System.Exception __exception) -> System.Exception",
-          "prefix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Empire __instance) -> System.Void",
-          "prefix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Empire __instance, ref DistantWorlds.Types.EmpirePolicy __state) -> System.Void"
-        ]
-      },
-      "reviewed": "2026-11-18",
-      "note": "Steam beta 1.3.8.7, ACM 0.6.1 and Coherent integration 1.0.43. Mixed-hull research generated one successor for each owner and zero on repeat. Only the observed integration-mode generator hooks are covered."
     }
   ]
 }

@@ -1,3 +1,31 @@
+# ACM 0.6.1 RC3 — independent Coherent redesign on a shared hull
+
+ACM-side test build for Distant Worlds 2 Steam Beta Vanilla 1.3.8.7 and full XL integration review. Extract the ZIP into the game directory with the game and launcher closed. Enable one ACM provider and Positronic Matrix. Use your own Coherent build and a copy of your XL campaign.
+
+## Changes since the paired RC2
+
+- Restored live channel `advanced-construction.design-series`, version 1, delegate `Func<object,int,string>`. Pass the current Galaxy and design ID. It returns the player series name, or null for unclassified and unknown designs. Resolve the channel when needed so either mod may load first.
+- Removed ACM's call to `coherent-research.review-unclassified`. Coherent owns its review schedule and redesign rules. The ACM guard now applies inside the stock generator to the exact hull IDs with active series. The shared hull-policy getter is available to Coherent.
+- Restored Series controls when the native designer replaces its retrofit panel during an upgrade. The Designs list supports draggable column boundaries, saved widths and double-click reset.
+
+## What passed on Vanilla
+
+On Gizurean frigate hull 1037, Picket was in an ACM series with automatic series upgrades off; Long (Standoff) was outside any series. Hull automation was on and Proton Engine level 1 became available to both designs.
+
+1. An independent test driver queried series membership and called the real RC2 Coherent redesign handler twice. Exactly one Long successor was created, with the new engine and its Long mission. Picket stayed active in its series.
+2. Enabling upgrades for the Picket series produced exactly one Picket successor. Repeating the review produced zero additional frigates.
+3. The contract run passed 109 assertions. The broader ACM native regression run passed 928.
+
+## Open end-to-end check for Mordachai
+
+The ordinary game generator with the local RC2 Coherent build produced **zero Long successors**. Coherent reported Design Lineages disabled when ACM was present. The independent driver above exercises the redesign handler; it does not validate the production scheduler.
+
+In Coherent's own automatic review, consult the membership channel per design, skip ACM members, and process unclassified designs under Coherent's normal rules even when ACM skips its review. On full XL, repeat the two-frigate scenario using the ordinary scheduler with the test driver off. Expect one Long, zero Pickets and no duplicate on repeat. Enable the series afterward and verify one Picket with its series and mission retained.
+
+Full XL verification is pending. The RC3 package contains ACM only. Earlier editor changes, tests and known limitations are documented in the [RC2 review notes](https://github.com/1Kill1Zone1/DW2-Mods/blob/055c8e2/review/xl-integration-rc2/PATCH-NOTES.md).
+
+## Earlier test guide
+
 # Testing Advanced Construction Mod 0.4.0
 
 ## Requirements and installation

@@ -73,7 +73,7 @@ internal static class DesignerIntegration
         var panel=Field<DWPanel>(__instance,"UpgradePanel");if(panel==null)return;
         if(ReferenceEquals(state.Panel,panel)&&state.ClassButton!=null&&panel.Controls.Contains(state.ClassButton)){Refresh(__instance);return;}
         if(state.ClassButton!=null)Buttons.Remove(state.ClassButton);if(state.SourceButton!=null)Buttons.Remove(state.SourceButton);
-        state.Panel=panel;
+        state.Panel=panel;state.Arranged=false;state.InputSession=null;
         float pad=Math.Max(6,UserInterfaceHelper.CalculateScaledValue(8)),row=Math.Max(24,UserInterfaceHelper.CalculateScaledValue(28));
         state.NativeLayout=panel.Controls.Select(c=>(c,c.Position,c.Size)).ToArray();state.NativeHeight=panel.Size.Y;state.Pad=pad;state.Row=row;
         state.NativeToCaption=Field<DWLabel>(__instance,"UpgradeToLabel")?.Text??"This Design Upgrades To";
@@ -120,7 +120,8 @@ internal static class DesignerIntegration
         sourceButton.PostScene=true;sourceButton.Visible=true;
         panel.AddControl(sourceButton);state.SourceButton=sourceButton;Buttons.Add(sourceButton,__instance);Refresh(__instance);
     }
-    private static void AfterBind(ShipDesignRenderer __instance)=>Refresh(__instance);
+    // BindUpgradeData may bind a replacement native panel on an already-open renderer.
+    private static void AfterBind(ShipDesignRenderer __instance)=>AfterSetup(__instance);
     private static void Refresh(ShipDesignRenderer renderer)
     {
         var state=Editors.GetOrCreateValue(renderer);

@@ -5,8 +5,9 @@ namespace AdvancedConstructionMod;
 
 internal static class CoherentMissions
 {
-    internal static Action<object,int[]>? UnclassifiedReview() =>
-        LiveChannel.Get<Action<object,int[]>>("coherent-research.review-unclassified",1);
+    internal static void RegisterSeriesChannel() =>
+        LiveChannel.Provide<Func<object,int,string?>>("advanced-construction.design-series", 1, (campaign, id) =>
+            campaign is Galaxy galaxy && id >= 0 ? ConstructionCampaigns.Get(galaxy).SeriesName(id) : null);
     internal static Dictionary<string,string>? Choices(EditorSession session) =>
         LiveChannel.Get<Func<object,int,Dictionary<string,string>>>("coherent-research.hull-missions",1)?.Invoke(session.Galaxy,session.Draft.HullId);
 

@@ -46,13 +46,41 @@ internal static partial class Checks
         Console.WriteLine($"Hull={hull.ShipHullId} role={hull.Role} level={hull.Level} component={part.Component.Name} level {part.Level}->{technology.Level}");
         state.DesignClasses[picket.DesignId]=series;
         string keyForHull=ConstructionSnapshot.TargetKey(series,(int)hull.Role);
-        state.AutoUpgrade[keyForHull]=true;state.Targets[keyForHull]=picket.DesignId;
+        state.AutoUpgrade[keyForHull]=false;state.Targets[keyForHull]=picket.DesignId;
         Require(registry.TryCommit(empire,state,out _),"commit Picket series");
         empire.Policy.SetAutomationLevel(AutomationCategory.ShipDesigns,AutomationLevel.Automated);
         empire.Policy.SetShipDesignAutomationByHull(hull.Role,hull.Level,true);
         empire.ReviewLatestDesignsPerRole();empire.ReviewLatestDesignsPerShipHull();
         var ids=empire.Designs.Select(d=>d.DesignId).ToHashSet();
         empire.CreateShipDesigns(galaxy.StarDate+1,false);
+        var membership = (Func<object,int,string?>)LiveChannels.Get("Coherent R&D","advanced-construction.design-series",1,typeof(Func<object,int,string>))!;
+        Require(membership(galaxy,picket.DesignId)=="Mixed research Picket" && membership(galaxy,ranged.DesignId)==null &&
+            membership(new object(),picket.DesignId)==null && membership(galaxy,-1)==null,"series channel resolves only classified designs");
+        var independent = empire.Designs.Where(d=>!ids.Contains(d.DesignId) && d.HullId==hull.ShipHullId).ToArray();
+        Console.WriteLine($"Automatic Coherent scheduler: {independent.Length} new designs, Long obsolete={ranged.Obsolete}, Picket obsolete={picket.Obsolete}");
+        if (Environment.GetEnvironmentVariable("DW2_CONTRACT_DRIVER")=="1")
+        {
+            // Exercise the RC2 redesign engine with a consumer-owned clock. The released RC2 has no such scheduler.
+            var review=(Action<object,int[]>)LiveChannels.Channels["coherent-research.review-unclassified"];
+            void CoherentTick()
+            {
+                var candidates=empire.Designs.Where(d=>!d.Obsolete && d.HullId==hull.ShipHullId && membership(galaxy,d.DesignId)==null)
+                    .Select(d=>d.DesignId).ToArray();
+                review(galaxy,candidates);
+            }
+            CoherentTick();
+            CoherentTick();
+            Console.WriteLine("Independent contract driver ran two Coherent ticks.");
+        }
+        var onlyLong=empire.Designs.Where(d=>!ids.Contains(d.DesignId)&&d.HullId==hull.ShipHullId).ToArray();
+        Require(onlyLong.Length==1 && ranged.Obsolete && ranged.UpgradeDesignId==onlyLong[0].DesignId &&
+            getMission(galaxy,onlyLong[0].DesignId)=="Long" && membership(galaxy,onlyLong[0].DesignId)==null &&
+            !picket.Obsolete && getMission(galaxy,picket.DesignId)=="Picket" && membership(galaxy,picket.DesignId)=="Mixed research Picket",
+            "only Coherent upgrades Long while the Picket series waits");
+        empire.CreateShipDesigns(galaxy.StarDate+2,false);
+        Require(empire.Designs.Count(d=>!ids.Contains(d.DesignId)&&d.HullId==hull.ShipHullId)==1 && !picket.Obsolete,"no duplicate on next scheduler cycle");
+        Require(SeriesAutomation.SetMode(galaxy,empire,picket,true,out _),"enable ACM review for Picket");
+        empire.CreateShipDesigns(galaxy.StarDate+3,false);
         Require(registry.TryGet(empire,out var after,out _),"read results");
         var added=empire.Designs.Where(d=>!ids.Contains(d.DesignId)&&d.HullId==hull.ShipHullId).ToArray();
         foreach(var d in added)
@@ -65,7 +93,7 @@ internal static partial class Checks
         Require(picket.Obsolete&&ranged.Obsolete&&after.Targets[keyForHull]==added.Single(d=>getMission(galaxy,d.DesignId)=="Picket").DesignId&&
             ranged.UpgradeDesignId==added.Single(d=>getMission(galaxy,d.DesignId)=="Long").DesignId,"each origin points to its own next generation");
         var beforeRepeat=empire.Designs.Where(d=>d.HullId==hull.ShipHullId).Select(d=>d.DesignId).Order().ToArray();
-        empire.CreateShipDesigns(galaxy.StarDate+2,false);
+        empire.CreateShipDesigns(galaxy.StarDate+4,false);
         Require(beforeRepeat.SequenceEqual(empire.Designs.Where(d=>d.HullId==hull.ShipHullId).Select(d=>d.DesignId).Order()),"repeat review adds no frigate");
         Console.WriteLine("Repeated review: zero new frigates.");
         var nextPicket=added.Single(d=>getMission(galaxy,d.DesignId)=="Picket");

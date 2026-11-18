@@ -16,8 +16,8 @@ internal static class SeriesAutomation
     internal static void Install(Harmony harmony)
     {
         harmony.Patch(AccessTools.DeclaredMethod(typeof(Empire),"CreateShipDesigns",[typeof(long),typeof(bool)]),
+            transpiler:new HarmonyMethod(typeof(SeriesAutomation),nameof(GuardNativeHull)),
             prefix:new HarmonyMethod(typeof(SeriesAutomation),nameof(BeforeGenerate)),finalizer:new HarmonyMethod(typeof(SeriesAutomation),nameof(FinishGenerate)));
-        harmony.Patch(AccessTools.Method(typeof(EmpirePolicy),"GetShipDesignAutomationByHull"),prefix:new HarmonyMethod(typeof(SeriesAutomation),nameof(FilterNativeGenerator)));
         harmony.Patch(AccessTools.DeclaredMethod(typeof(DesignsDialog),"DesignsListItemClicked"),prefix:new HarmonyMethod(typeof(SeriesAutomation),nameof(BeforePolicyClick)));
         harmony.Patch(AccessTools.DeclaredMethod(typeof(Design),"DistantWorlds.Types.IListDrawable.DrawItem"),transpiler:new HarmonyMethod(typeof(SeriesAutomation),nameof(DrawPolicy)));
     }
@@ -38,7 +38,7 @@ internal static class SeriesAutomation
     }
 
     private static bool NativePolicy(EmpirePolicy policy,ShipRole role,byte level)
-    {var prior=generating;generating=null;try{return policy.GetShipDesignAutomationByHull(role,level);}finally{generating=prior;}}
+        => policy.GetShipDesignAutomationByHull(role,level);
 
     internal static bool EnsureModes(Galaxy galaxy,Empire empire,out ConstructionSnapshot state,out string? error)
     {
@@ -116,57 +116,58 @@ internal static class SeriesAutomation
         return policy.GetShipDesignAutomationByHull(role,level);
     }
 
-    private sealed class Generation(object gate,Generation? previous,Galaxy galaxy,Empire empire)
+    private sealed record Generation(Galaxy Galaxy, Empire Empire, Generation? Previous)
     {
-        internal readonly object Gate=gate;internal readonly Generation? Previous=previous;
-        internal readonly Galaxy Galaxy=galaxy;internal readonly Empire Empire=empire;
-        internal readonly HashSet<(ShipRole Role,byte Level)> Blocked=[];
-        internal bool Run;
+        internal readonly HashSet<short> ProtectedHulls = [];
+        internal bool Ready;
     }
-    private static bool BeforeGenerate(Empire __instance,bool forceCreate,out Generation? __state)
-    {
-        __state=null;if(!__instance.IsPlayer||EmpireGalaxy.GetValue(__instance) is not Galaxy galaxy)return true;
-        var registry=ConstructionCampaigns.Get(galaxy,__instance);Monitor.Enter(registry.Gate);
-        __state=new(registry.Gate,generating,galaxy,__instance);
-        if(!EnsureModes(galaxy,__instance,out var state,out var error)){Reason(galaxy,"global",error!);return false;}
-        foreach(var design in __instance.Designs)
-            if(state.DesignClasses.ContainsKey(design.DesignId)&&design.GetShipHull(galaxy) is { } hull)__state.Blocked.Add((hull.Role,hull.Level));
-        __state.Run=(int)__instance.Policy.GetAutomationLevel(AutomationCategory.ShipDesigns)==0;
-        generating=__state;return true;
-    }
-    private static bool FilterNativeGenerator(EmpirePolicy __instance,ShipRole shipRole,byte level,ref bool __result)
-    {if(generating==null||!ReferenceEquals(__instance,generating.Empire.Policy)||!generating.Blocked.Contains((shipRole,level)))return true;__result=false;return false;}
 
-    private static Exception? FinishGenerate(Exception? __exception,Generation? __state)
+    private static void BeforeGenerate(Empire __instance, out Generation? __state)
     {
-        if(__state==null)return __exception;
+        __state = null;
+        if (!__instance.IsPlayer || EmpireGalaxy.GetValue(__instance) is not Galaxy galaxy) return;
+        generating = __state = new Generation(galaxy, __instance, generating);
+        if (!EnsureModes(galaxy, __instance, out var state, out var error))
+        {
+            Reason(galaxy, "global", error!);
+            return;
+        }
+        foreach (var design in __instance.Designs)
+            if (!design.Obsolete && state.DesignClasses.ContainsKey(design.DesignId))
+                __state.ProtectedHulls.Add(design.HullId);
+        __state.Ready = true;
+    }
+
+    // Only the stock single-design-per-hull loop can retire unrelated designs together.
+    // Keep the public policy getter available to other generators, even inside this call.
+    private static IEnumerable<CodeInstruction> GuardNativeHull(IEnumerable<CodeInstruction> instructions)
+    {
+        var code = instructions.ToList();
+        var getter = AccessTools.Method(typeof(EmpirePolicy), nameof(EmpirePolicy.GetShipDesignAutomationByHull));
+        int index = code.FindIndex(i => i.Calls(getter));
+        if (index < 2 || code.Count(i => i.Calls(getter)) != 1 ||
+            !code[index-1].LoadsField(AccessTools.Field(typeof(ShipHull), nameof(ShipHull.Level))) ||
+            !code[index-2].IsLdloc())
+            throw new InvalidOperationException("Unexpected native hull automation lookup.");
+        code.InsertRange(index + 1, [code[index-2].Clone(), new CodeInstruction(OpCodes.Ldarg_0),
+            new CodeInstruction(OpCodes.Call, AccessTools.Method(typeof(SeriesAutomation), nameof(NativeHullAllowed)))]);
+        return code;
+    }
+
+    private static bool NativeHullAllowed(bool allowed, ShipHull hull, Empire empire) =>
+        allowed && (generating is not { } run || !ReferenceEquals(run.Empire, empire) ||
+                    (run.Ready && !run.ProtectedHulls.Contains(hull.ShipHullId)));
+
+    private static Exception? FinishGenerate(Exception? __exception, Generation? __state)
+    {
+        if (__state == null) return __exception;
+        generating = __state.Previous;
         try
         {
-            if(__exception==null&&__state.Run)
-            {
-                UpgradeAll(__state.Galaxy,__state.Empire);
-                ReviewUnclassified(__state);
-            }
+            if (__exception == null && __state.Ready) UpgradeAll(__state.Galaxy, __state.Empire);
         }
-        catch(Exception ex){Reason(__state.Galaxy,"global","Series auto-upgrade paused: "+ex.Message);}
-        finally{generating=__state.Previous;Monitor.Exit(__state.Gate);}
+        catch (Exception ex) { Reason(__state.Galaxy, "global", "Series auto-upgrade paused: " + ex.Message); }
         return __exception;
-    }
-
-    private static void ReviewUnclassified(Generation run)
-    {
-        var review=CoherentMissions.UnclassifiedReview();
-        if(review==null || run.Blocked.Count==0)return;
-        if(!ConstructionCampaigns.Get(run.Galaxy,run.Empire).TryGet(run.Empire,out var current,out _))return;
-        var candidates=new List<int>();
-        foreach(var design in run.Empire.Designs)
-        {
-            if(design==null||design.Obsolete||current.DesignClasses.ContainsKey(design.DesignId))continue;
-            var hull=design.GetShipHull(run.Galaxy);
-            if(hull!=null&&run.Blocked.Contains((hull.Role,hull.Level))&&NativePolicy(run.Empire.Policy,hull.Role,hull.Level))
-                candidates.Add(design.DesignId);
-        }
-        if(candidates.Count>0)review(run.Galaxy,candidates.ToArray());
     }
 
     internal static void UpgradeAll(Galaxy galaxy,Empire empire)

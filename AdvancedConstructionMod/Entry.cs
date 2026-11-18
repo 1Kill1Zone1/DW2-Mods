@@ -33,6 +33,7 @@ public static class Entry
                     typeof(DesignerIntegration), nameof(DesignerIntegration.BeforeSave), nameof(DesignerIntegration.AfterSave));
                 DesignerIntegration.Install(harmony);
                 SeriesAutomation.Install(harmony);
+                CoherentMissions.RegisterSeriesChannel();
                 initialized = true;
             }
             catch
@@ -94,7 +95,13 @@ public static class Entry
     private static Exception? FinishGalaxySave(Exception? __exception,object? __state)
     {if(__state!=null)Monitor.Exit(__state);return __exception;}
 
-    private static void AfterGalaxyLoad(Galaxy __instance) => ConstructionCampaigns.Forget(__instance);
+    private static void AfterGalaxyLoad(Galaxy __result)
+    {
+        if (__result == null) return;
+        ConstructionCampaigns.Forget(__result);
+        if (__result.Empires?.GetPlayer() is Empire player)
+            ConstructionCampaigns.Get(__result, player).TryGet(player, out _, out _);
+    }
 
 }
 

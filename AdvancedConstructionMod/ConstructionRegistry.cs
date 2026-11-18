@@ -9,6 +9,14 @@ internal sealed class ConstructionRegistry
     private readonly object gate = new();
     private readonly Dictionary<short, EmpireState> states = new();
 
+    private volatile ConstructionSnapshot? playerSnapshot;
+    internal string? SeriesName(int id)
+    {
+        var snapshot = playerSnapshot;
+        return snapshot != null && snapshot.DesignClasses.TryGetValue(id, out var series)
+            ? snapshot.Classes.GetValueOrDefault(series) : null;
+    }
+
     public ConstructionRegistry(Galaxy galaxy) => this.galaxy = galaxy;
     internal object Gate => gate;
 
@@ -27,6 +35,7 @@ internal sealed class ConstructionRegistry
                 catch (Exception ex) { state.Error = "Construction Series metadata is unavailable: " + ex.Message; }
             }
             snapshot = state.Snapshot ?? new ConstructionSnapshot();
+            if (empire.IsPlayer) playerSnapshot = state.Snapshot;
             error = state.Error;
             return error == null;
         }
@@ -42,7 +51,7 @@ internal sealed class ConstructionRegistry
             ConstructionSnapshot beforeStored;
             try { beforeStored=state.Storage.Read()??new ConstructionSnapshot(); }
             catch(Exception ex){error="Cannot verify the stored metadata before commit: "+ex.Message;return false;}
-            try { state.Storage.Write(next); state.Snapshot = next; error = null; return true; }
+            try { state.Storage.Write(next); state.Snapshot = next; if (empire.IsPlayer) playerSnapshot = next; error = null; return true; }
             catch (Exception ex)
             {
                 // MatrixStorage restores the former header before rethrowing. Keep that verified old graph usable.
@@ -60,7 +69,8 @@ internal sealed class ConstructionRegistry
                 catch (Exception recovery)
                 {
                     state.Error = "Construction Series metadata commit and recovery failed: " + recovery.Message;
-                    error = state.Error;
+                    if (empire.IsPlayer) playerSnapshot = state.Snapshot;
+            error = state.Error;
                     return false;
                 }
             }
@@ -89,7 +99,7 @@ internal sealed class ConstructionRegistry
         lock (gate)
         {
             if (!states.TryGetValue(empire.EmpireId, out var state)) { error = "Construction Series state was not loaded."; return false; }
-            try { state.Storage.Write(knownGood); state.Snapshot = knownGood; state.Error = null; error = null; return true; }
+            try { state.Storage.Write(knownGood); state.Snapshot = knownGood; if (empire.IsPlayer) playerSnapshot = knownGood; state.Error = null; error = null; return true; }
             catch (Exception ex) { state.Error = "Construction Series rollback failed: " + ex.Message; error = state.Error; return false; }
         }
     }

@@ -25,6 +25,15 @@ internal static partial class Checks
         using var input=new BinaryReader(File.OpenRead(fixture));var galaxy=new Galaxy().ReadFromStream(input,out _,out var failures);
         if(failures.Count!=0)throw new InvalidDataException(string.Join(";",failures));
         var empire=galaxy.Empires.GetPlayer();var store=new MatrixStorage(galaxy,empire.EmpireId);var state=store.Read();
+        foreach(var port in empire.Ships.Where(s=>s.Role.ToString().Contains("SpacePort",StringComparison.OrdinalIgnoreCase)))
+            Console.WriteLine($"PORT {port.Name} role={port.Role} hullBuilt={port.HullConstructionLevel:P1} underConstructionOrRepair={port.IsUnderConstructionOrRepair} location={port.LocationId}");
+        foreach(var m in empire.Messages.Concat(empire.RecentMessages).Concat(empire.EvaluationQueue).Distinct())
+        {
+            string summary=$"{m.Title} {m.Text} {m.GameTask?.Text}";
+            if(summary.Contains("spaceport",StringComparison.OrdinalIgnoreCase) || summary.Contains("space port",StringComparison.OrdinalIgnoreCase))
+                Console.WriteLine($"PORT MESSAGE {m.GameTaskExecution} {m.GameTask?.Type} {summary}");
+        }
+        Console.WriteLine("ACM saved series="+(state?.Classes.Count??0));
         var designs=empire.Designs.Where(d=>d.Name.Contains("Xura",StringComparison.OrdinalIgnoreCase)||d.Name.Contains("Hura",StringComparison.OrdinalIgnoreCase)||d.Name.Contains("Devour",StringComparison.OrdinalIgnoreCase)).Select(d=>
         {
             string? series=state?.DesignClasses.GetValueOrDefault(d.DesignId);var hull=d.GetShipHull(galaxy);int role=(int)d.GetRole(galaxy);
@@ -60,7 +69,7 @@ internal static partial class Checks
             Require(!devourer!.Obsolete&&devourer.Components.SequenceEqual(beforeComponents[devourer.DesignId]),"owner copy Manual Devourer remains active with unchanged equipment");
             string simulation=JsonSerializer.Serialize(result,new JsonSerializerOptions{WriteIndented=true});File.WriteAllText(Path.Combine(output,"automatic-simulation.json"),simulation);Console.WriteLine(simulation);
         }
-        foreach(var value in Enum.GetValues<AutomationCategory>())Console.WriteLine("AUTOMATION "+(int)value+" "+value);
+        foreach(var value in Enum.GetValues<AutomationCategory>())Console.WriteLine("AUTOMATION "+(int)value+" "+value+" = "+empire.Policy.GetAutomationLevel(value));
         foreach(var field in typeof(Design).GetFields(BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance).Where(f=>f.Name.Contains("Component")||f.Name.Contains("Bay")))Console.WriteLine("DESIGN FIELD "+field);
         foreach(var type in new[]{typeof(Empire),typeof(Design)})
         foreach(var method in AccessTools.GetDeclaredMethods(type).Where(m=>type==typeof(Empire)?m.Name is "CreateShipDesigns" or "CheckAddDesign" or "ExecuteTaskUpdateShipDesign":m.Name is "Upgrade" or "UpgradeComponents" or "GenerateNewDesign"))

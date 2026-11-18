@@ -47,6 +47,26 @@ internal static partial class Checks
             layout.SeriesHeader.ForeColor==layout.NameHeader.ForeColor&&layout.SeriesHeader.FontNormal==layout.NameHeader.FontNormal&&
             layout.SeriesHeader.UseBoldFont==layout.NameHeader.UseBoldFont&&layout.SeriesHeader.TextAlignment==layout.NameHeader.TextAlignment,
             "Series uses native header background, hover color, font and alignment");
+        dialog.Visible=true;
+        var edge=new Point((int)seriesRect.Right-1,(int)(seriesRect.Y+seriesRect.Height/2));
+        var end=new Point(edge.X+13,edge.Y);
+        float initial=layout.Series.Size, other=layout.Spec.Size;
+        UserInterfaceController.HoveredControl=layout.SeriesHeader;
+        UserInterfaceController.DoMouseDown(new GameSettings(),edge,true,empire,false,false);
+        UserInterfaceController.DoMouseMove(new GameSettings(),new(13,0),end,true,false);
+        UserInterfaceController.DoMouseUp(new GameSettings(),end,true,empire,false,false,.1f);
+        Require(layout.Series.Size>initial && Math.Abs(layout.Series.Size+layout.Spec.Size-initial-other)<.01,"drag reallocates space between adjacent headers");
+        var restoredLayout=new DesignsSeriesColumn.Layout(dialog);
+        Require(restoredLayout.Series.Size==layout.Series.Size,"new Designs layout reads saved width");
+        var boundary=layout.SeriesHeader.CalculateAbsoluteRectangle();
+        var resetAt=new Point((int)boundary.Right-1,edge.Y);
+        for(int click=0;click<2;click++)
+        {
+            UserInterfaceController.HoveredControl=layout.SeriesHeader;
+            UserInterfaceController.DoMouseDown(new GameSettings(),resetAt,true,empire,false,false);
+            UserInterfaceController.DoMouseUp(new GameSettings(),resetAt,true,empire,false,false,.1f);
+        }
+        Require(Math.Abs(initial-layout.Series.Size)<.01,"double click resets column widths");
         var sort=AccessTools.Field(typeof(DesignsDialog),"_SortField");
         foreach(string key in new[]{"Name","Role","ShipHull","BuildCost","MaintenanceCost","DateCreated","Size","Amount","AutoDesignRole","AllowAutoRetrofit","IsObsolete"})
         {
