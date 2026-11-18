@@ -1,5 +1,11 @@
 # Cancellation Refunds
 
+## 0.2.0 — 2026-11-18
+
+- Refund recorded state payments for unfinished ships and orbital bases cancelled at a yard or explicitly scuttled.
+- Preserve payment identity through save/load; invalidate completed and transferred hulls. Private construction and non-cancellation destruction remain ineligible.
+- Keep the game's material handling and existing facility and troop refunds.
+
 ## 0.1.1 — 2026-11-15 — Steam beta compatibility
 
 - Accept the verified Steam beta1.3.8.7 engine with an exact Types assembly hash guard; other unverified versions still fail before economic hooks.

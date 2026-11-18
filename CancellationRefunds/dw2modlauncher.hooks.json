@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "modVersion": "0.1.1",
+  "modVersion": "0.2.0",
   "gameVersion": "1.3.8.7",
   "hooks": [
     {
@@ -271,6 +271,96 @@
       "kind": "postfix",
       "effect": "observes",
       "method": "CancellationRefunds.Entry:Loaded",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskBuildShips(DistantWorlds.Types.StellarObject,DistantWorlds.Types.DesignList,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],Stride.Core.Mathematics.Vector3,DistantWorlds.Types.Orb,System.Boolean,DistantWorlds.Types.StellarObject)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "method": "CancellationRefunds.Entry:ShipPaymentInstructions",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:CommandBuild(System.DateTime,System.Single,System.Int64,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,DistantWorlds.Types.ShipMission,DistantWorlds.Types.StellarObject,Stride.Core.Mathematics.Point)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "method": "CancellationRefunds.Entry:ShipPaymentInstructions",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskCancelShipConstruction(DistantWorlds.Types.Ship,DistantWorlds.Types.StellarObject)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginYardCancel",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskCancelShipConstruction(DistantWorlds.Types.Ship,DistantWorlds.Types.StellarObject)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndShipCancel",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapShip(DistantWorlds.Types.Ship)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginScuttle",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapShip(DistantWorlds.Types.Ship)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndShipCancel",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapShips(DistantWorlds.Types.ShipList)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "method": "CancellationRefunds.Entry:GroupScuttleInstructions",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:ChangeEmpire(System.Int16,System.Boolean,DistantWorlds.Types.CharacterHandlingBehavior,System.Single,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:BeginShipOwnerChange",
+      "priority": 800,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:ChangeEmpire(System.Int16,System.Boolean,DistantWorlds.Types.CharacterHandlingBehavior,System.Single,System.Boolean)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:EndShipOwnerChange",
+      "priority": 0,
+      "before": [],
+      "after": []
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:BuildShip(DistantWorlds.Types.Ship,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Boolean,DistantWorlds.Types.CargoList,DistantWorlds.Types.CargoList,System.Single,System.Single,System.Single,System.Single,System.Boolean&)",
+      "kind": "postfix",
+      "effect": "observes",
+      "method": "CancellationRefunds.Entry:ObserveShipConstruction",
       "priority": 0,
       "before": [],
       "after": []

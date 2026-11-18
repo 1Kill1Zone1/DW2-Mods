@@ -7,7 +7,7 @@ using HarmonyLib;
 
 namespace CancellationRefunds;
 
-public static class Entry
+public static partial class Entry
 {
     internal const string HarmonyId = "local.dw2.cancellation-refunds";
     static readonly Harmony Hooks = new(HarmonyId);
@@ -96,6 +96,7 @@ public static class Entry
             Patch(AccessTools.GetDeclaredMethods(typeof(Colony)).Single(m => m.Name == "ChangeEmpire" && m.GetParameters().Length == 12), transpiler: nameof(OwnershipInstructions));
             Patch(AccessTools.Method(typeof(Galaxy), nameof(Galaxy.WriteToStream)), prefix: nameof(Save));
             Patch(AccessTools.Method(typeof(Galaxy), nameof(Galaxy.ReadFromStream)), postfix: nameof(Loaded));
+            if (beta) InstallShipRefunds();
             initialized = true;
         }
         catch { Hooks.UnpatchAll(HarmonyId); throw; }
@@ -216,7 +217,12 @@ public static class Entry
         var amount = Ledger.Consume(candidate);
         if (!(amount > 0) || !float.IsFinite(amount)) return;
         var previous = credit;
-        var c = new CreditFrame { Economy = payer.Economy, Type = candidate.Payment.Kind == "facility" ? ExpenseType.FacilityBuilding : ExpenseType.TroopRecruitment,
+        var c = new CreditFrame { Economy = payer.Economy, Type = candidate.Payment.Kind switch
+            {
+                "ship" => ExpenseType.ShipBuilding,
+                "facility" => ExpenseType.FacilityBuilding,
+                _ => ExpenseType.TroopRecruitment
+            },
             Amount = amount, ExpectedDepth = expenseDepth + 1 };
         credit = c;
         try

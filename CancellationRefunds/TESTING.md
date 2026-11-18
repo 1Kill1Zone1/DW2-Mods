@@ -1,11 +1,10 @@
-# Testing Cancellation Refunds0.1.1
+# Testing Cancellation Refunds 0.2.0
 
-Target: Steam beta1.3.8.7 with Positronic Matrix. The historical0.1.0 asset is for GOG1.3.8.4. This beta DLL passed79 full native,26 targeted and two missing-Matrix checks, plus actual hook registration; actual Troop Logistics1.0.40 / War Chest1.0.21 callbacks were exercised.
+Verified against Steam beta 1.3.8.7. The isolated suite passed 29 ship and orbital base checks, 79 facility and troop checks, 26 targeted checks, and two missing-Matrix checks. The official Mod Launcher 1.0.44 also registered the mod alongside the other active code modules. The constructor test starts at the work site. Live UI and gameplay remain manual checks.
 
-1. Use a separate campaign slot. Start a NEW ordinary paid building or troop order after enabling the mod and record the actual state payment. Existing pre-mod orders have no refund record.
-2. Cancel at zero progress for the full recorded payment, or at25% for75%. Confirm state treasury rises once; private money is untouched. Use the normal cancellation action.
-3. Retry cancellation and save/reload: a removed/refunded order must never pay again. Invalid/stale cancellation pays zero.
-4. Free/old/unknown orders, upgrades, completed or damaged-completed assets, captures, combat destruction, ships and resources must not qualify. Capture followed by recapture must not restore eligibility.
-5. With the optional tested peers, inspect automatic Garrison/Staging recruits and completion history. Compare treasury values directly: War Chest need not display negative expenses as a refund row.
+1. Start a new state-funded ship and record its actual treasury debit. Cancel it in the yard's construction queue before work starts. The complete debit should return once.
+2. Start a new state-funded orbital base. Use **Scuttle** partway through construction. The credit should match the remaining fraction of the debit. Repeat from a separate save slot after saving and reloading.
+3. Cancel multiple unfinished state-funded hulls and compare the combined refund with the individual costs. Retry a cancelled order to check that it pays once.
+4. Try a private order, a completed hull, or a project started before installing the update. These are ineligible. Compare the treasury directly, since a War Chest summary may omit a negative expense.
 
-Live cancellation UI, natural gameplay and FPS remain manual acceptance. Report versions, steps, expected/actual balance and screenshots; keep private campaign files out of public issues. The release cannot run on unverified engine versions/hashes.
+The native test project requires the game's assemblies and an isolated read-only campaign fixture. It reads Positronic Matrix and the optional compatibility test dependencies from the game root's mods folder. Set DW2_TEST_OUTPUT_DIR to a writable scratch directory for generated test saves.

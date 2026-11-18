@@ -1,6 +1,6 @@
 {
   "displayName": "Cancellation Refunds",
-  "version": "0.1.1",
-  "description": "Returns the unspent monetary share when newly tracked construction or recruitment is cancelled. Requires Positronic Matrix.",
+  "version": "0.2.0",
+  "description": "Refunds the unbuilt share of recorded state-funded ship, orbital base and facility projects, and unfinished troop recruitment, when a native cancellation succeeds. Requires Positronic Matrix.",
   "bundles": []
 }
