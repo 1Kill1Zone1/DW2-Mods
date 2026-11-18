@@ -1,0 +1,119 @@
+{
+  "schema": 1,
+  "modVersion": "0.3.0",
+  "gameVersion": "1.3.8.7",
+  "hooks": [
+    {
+      "target": "DistantWorlds.Types.Location:UpdateLocationPosition(Stride.Core.Mathematics.Point)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "Publish only temporary location origins before native coordinate conversion."
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:ExecuteAction(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.UI.DWButton,DistantWorlds.Types.GameTask,DistantWorlds.Types.GameTaskList,DistantWorlds.UI.ActionButtonData,System.Boolean)",
+      "targetAssembly": "DistantWorlds.UI",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "Enter the synchronous manual UI-input scope."
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:ExecuteAction(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.UI.DWButton,DistantWorlds.Types.GameTask,DistantWorlds.Types.GameTaskList,DistantWorlds.UI.ActionButtonData,System.Boolean)",
+      "targetAssembly": "DistantWorlds.UI",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "Restore the previous UI-input scope on success or exception."
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:AssignMissionCore(DistantWorlds.Types.ShipMissionType,DistantWorlds.Types.StellarObject,DistantWorlds.Types.Fleet,System.Int32,System.Int32,System.Boolean,System.Int32,System.Boolean,DistantWorlds.Types.StellarObject,System.Boolean,DistantWorlds.Types.AttackTarget)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "Remember an executed manual Move or cancel the prior coordination mode."
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteGameTask(DistantWorlds.Types.GameTask,System.Boolean,System.Boolean,System.Boolean)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Handle scoped player refuel/Stop; preserve normal automatic and unknown-goal behaviour."
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:DoTasks(System.DateTime,DistantWorlds.Types.Location)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "Bounded manual fleet coordination; native movement, cargo and safety rules remain."
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:GatherShips(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Avoid native regrouping replacing the fixed manual rendezvous while enabled."
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:SignalFuelTankersForRefuelling(DistantWorlds.Types.Empire,DistantWorlds.Types.ResourceQuantityList,System.Single,System.Boolean)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Assign nearby eligible recipients only inside the explicit manual fleet signal."
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionCore(DistantWorlds.Types.ShipMission,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.CargoReservationList,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Reject stale coordination commands after a newer order or fleet-membership change."
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionCore(DistantWorlds.Types.ShipMission,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.CargoReservationList,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "Respect specific manual ship orders and service/emergency priorities."
+    },
+    {
+      "target": "DistantWorlds.Types.ShipList:GetByLowFuelLevel(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Single,System.Int16,DistantWorlds.Types.Ship,System.Boolean,DistantWorlds.Types.ShipList,System.Boolean,System.Boolean,DistantWorlds.Types.Ship,System.Boolean)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "Order an already eligible native recipient list by physical distance."
+    },
+    {
+      "target": "DistantWorlds.Types.ShipList:GetByLowFuelLevel(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Single,System.Int16,DistantWorlds.Types.Ship,System.Boolean,DistantWorlds.Types.ShipList,System.Boolean,System.Boolean,DistantWorlds.Types.Ship,System.Boolean,System.Boolean&)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "Order an already eligible native recipient list by physical distance."
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionTransferFuel(DistantWorlds.Types.Ship,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],System.Boolean)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Preserve current transfers and atomically reserve distinct automatic recipients."
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionTransferFuel(DistantWorlds.Types.Ship,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],System.Boolean)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "Release temporary assignment reservations on success or exception."
+    },
+    {
+      "target": "DistantWorlds.Types.ShipMission:ResolveValidMissions(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Fleet,DistantWorlds.Types.StellarObject,DistantWorlds.Types.Fleet,System.Int32,System.Int32,System.Boolean)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "Append the coordinate refuel order to the manual fleet menu."
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:CheckAssignNextQueuedMission(DistantWorlds.Types.Empire)",
+      "targetAssembly": "DistantWorlds.Types",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "Hold the next order during a rendezvous and recognize a queued refuel waypoint."
+    }
+  ]
+}

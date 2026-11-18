@@ -1,14 +1,15 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Version>0.2.0</Version>
+    <Version>0.3.0</Version>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
-    <GameRoot Condition="'$(GameRoot)' == ''">C:/Games/Distant Worlds 2 Main/Distant Worlds 2</GameRoot>
+    <GameRoot Condition="'$(GameRoot)' == ''">C:/Games/Steam/steamapps/common/Distant Worlds 2</GameRoot>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Entry.cs" />
+    <Compile Include="RefuelPoint.cs" />
     <Compile Include="Rally.cs" />
     <Compile Include="RallyState.cs" />
     <Reference Include="0Harmony;DistantWorlds.Types;DistantWorlds.Core;DistantWorlds.UI;Stride.Core.Mathematics"

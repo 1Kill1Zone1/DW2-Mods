@@ -1,0 +1,18 @@
+{
+  "Refuelling": [
+    {
+      "key": "RallyWhileRefuelling",
+      "type": "bool",
+      "label": "Keep gathering while refuelling",
+      "description": "For a manual player fleet, Move then Refuel from Fuel Tankers keeps the chosen destination. Mobile ships continue at their normal available speed; tankers serve nearby fleet ships first. Stop or a new order cancels it. Requires Positronic Matrix to remember the destination across saves. Off preserves the game's normal refuelling behaviour.",
+      "default": false
+    },
+    {
+      "key": "QueueRefuelPoint",
+      "type": "bool",
+      "label": "Gather and refuel here",
+      "description": "Adds a manual fleet order at map coordinates. Shift queues the rendezvous. Requires Positronic Matrix and a fleet tanker.",
+      "default": false
+    }
+  ]
+}

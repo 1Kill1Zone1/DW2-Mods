@@ -37,14 +37,15 @@ internal static class Rally
         foreach (var method in typeof(ShipList).GetMethods().Where(m => m.Name == "GetByLowFuelLevel"))
             h.Patch(method, postfix: new HarmonyMethod(typeof(Rally), nameof(NearestFirst)));
         h.Patch(AccessTools.Method(typeof(Ship), nameof(Ship.AssignMissionTransferFuel)), prefix: new HarmonyMethod(typeof(Rally), nameof(KeepTransfer)), finalizer:new HarmonyMethod(typeof(Rally),nameof(TransferFinished)));
+        RefuelPoint.Install(h);
         installed = true;
     }
 
-    private static bool Eligible(Fleet? fleet) => Enabled && fleet != null && fleet.Role == FleetRole.Manual && fleet.GetEmpire() is { IsPlayer: true } && fleet.Ships.Count <= 1024;
+    internal static bool Eligible(Fleet? fleet) => (Enabled || RefuelPoint.Enabled) && fleet != null && fleet.Role == FleetRole.Manual && fleet.GetEmpire() is { IsPlayer: true } && fleet.Ships.Count <= 1024;
     private static bool Active(Fleet fleet, out RallyRuntime? runtime)
     {
         runtime = Eligible(fleet) ? RallyStore.For(fleet) : null;
-        return runtime is { Faulted: false, State.Active: true };
+        return runtime is { Faulted: false, State.Active: true } && (runtime.State.PointOrder ? RefuelPoint.Enabled : Enabled);
     }
     private static bool Busy(Ship ship) => ship.IsDestroyed || ship.IsUnderConstructionOrRepair || ship.Threats?.TotalHostileStrength > 0 || ship.Threats?.TotalHostileMobileStrength > 0;
     private static double Distance(Ship ship, int x, int y) => Math.Pow((double)ship.GalaxyX - x, 2) + Math.Pow((double)ship.GalaxyY - y, 2);
@@ -59,7 +60,7 @@ internal static class Rally
         lock (runtime.Gate)
         {
             if (runtime.Faulted) return;
-            runtime.State.Active = false; runtime.State.Excluded = []; runtime.State.HasGoal = false;
+            runtime.State.PointOrder = false; runtime.State.Active = false; runtime.State.Excluded = []; runtime.State.HasGoal = false;
             runtime.Revision++;
             if (missionType == ShipMissionType.Move && __instance.Mission != null)
             {
@@ -83,7 +84,8 @@ internal static class Rally
 
     private static bool TaskEntered(Empire __instance, GameTask task, bool manuallyExecuted, bool shipFleetMissionIsQueued)
     {
-        if (!Enabled || (!manuallyExecuted && uiInput==0) || !__instance.IsPlayer || task == null) return true;
+        if (task != null && RefuelPoint.Consume(__instance, task, shipFleetMissionIsQueued)) return false;
+        if ((!Enabled && !RefuelPoint.Enabled) || (!manuallyExecuted && uiInput==0) || !__instance.IsPlayer || task == null) return true;
         if (task.Type == GameTaskType.ClearShipMission)
         {
             foreach(var item in task.Entities ?? [])
@@ -94,7 +96,7 @@ internal static class Rally
             }
             return true;
         }
-        if (task.Type != GameTaskType.FleetSignalFuelTankers || !task.Enabled) return true;
+        if (!Enabled || task.Type != GameTaskType.FleetSignalFuelTankers || !task.Enabled) return true;
         var selected = Fleets(task, __instance).FirstOrDefault();
         if (!Eligible(selected)) return true;
         var runtime = RallyStore.For(selected!);
@@ -211,7 +213,16 @@ internal static class Rally
                 if (gathered && !needsFuel)
                 {lock(runtime.Gate){if(runtime.Revision==workerRevision){state.Active=false;runtime.Revision++;RallyStore.Save(fleet,runtime);}}return;}
                 dispatch++;
-                try { fleet.SignalFuelTankersForRefuelling(fleet.GetEmpire()!, fleet.GetFuelRequired(), float.MaxValue, true); }
+                try
+                {
+                    bool assigned = fleet.SignalFuelTankersForRefuelling(fleet.GetEmpire()!, fleet.GetFuelRequired(), float.MaxValue, true);
+                    if (state.PointOrder && gathered && !assigned &&
+                        !fleet.Ships.Any(s => s.Role == ShipRole.FuelTanker && s.Mission?.Type == ShipMissionType.TransferFuel))
+                    {
+                        lock (runtime.Gate)
+                            if (runtime.Revision == workerRevision) Cancel(fleet, true);
+                    }
+                }
                 finally { dispatch--; }
             }
             catch (Exception error) { RallyStore.Fault(runtime, error); }
@@ -242,6 +253,7 @@ internal static class Rally
             var candidates = __instance.Ships.GetByLowFuelLevel(galaxy, empire, .99f, summary.ReactorFuelResourceId, tanker, false, reserved, true, true, tanker, false);
             foreach (var target in candidates.OrderBy(s => Distance(s, tanker.GalaxyX, tanker.GalaxyY)).ThenBy(s => s.ShipId))
             {
+                if (state.PointOrder && Distance(target, state.X, state.Y) > ArrivalRadius * ArrivalRadius) continue;
                 if (target.Fleet != __instance || state.Excluded.Contains(target.ShipId) || Busy(target) || target.CheckForIncomingFuelTanker(galaxy, empire)) continue;
                 if (Distance(target, tanker.GalaxyX, tanker.GalaxyY) >= summary.RemoteFuelTransferRange * summary.RemoteFuelTransferRange && !tanker.WithinFuelRangeBestPathApproximate(empire, target, 0, galaxy.StarDate, ShipMissionType.Undefined, out _)) continue;
                 tanker.AssignMissionTransferFuel(target, null!, false);

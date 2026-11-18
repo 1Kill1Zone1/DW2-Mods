@@ -14,6 +14,7 @@ public static class Entry
     {
         using var options = System.Text.Json.JsonDocument.Parse(optionsJson);
         Rally.Enabled = options.RootElement.TryGetProperty("RallyWhileRefuelling", out var setting) && setting.GetBoolean();
+        RefuelPoint.Enabled = options.RootElement.TryGetProperty("QueueRefuelPoint", out var point) && point.GetBoolean();
         Init();
     }
 

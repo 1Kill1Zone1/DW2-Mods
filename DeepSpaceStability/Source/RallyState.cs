@@ -14,6 +14,7 @@ internal sealed class RallyState
     public int X { get; set; }
     public int Y { get; set; }
     public bool HasGoal { get; set; }
+    public bool PointOrder { get; set; }
     public bool Active { get; set; }
     public HashSet<int> Excluded { get; set; } = [];
 }

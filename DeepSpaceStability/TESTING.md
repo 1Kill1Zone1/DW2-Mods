@@ -1,14 +1,10 @@
-# Testing Deep Space Stability and Refuel 0.2.0
+# Testing 0.3.0 RC 1
 
-Target: Steam beta1.3.8.7 package; see the bounded verification evidence below.
+Use a disposable save on Steam Beta Vanilla 1.3.8.7 with Positronic Matrix and the new launcher option enabled.
 
-127 recorded scoped assertions, including native save/load and installed integration callbacks; live travel remains manual.
+1. Select a manual fleet containing an automated tanker with compatible fuel cargo. Right-click empty space and choose Gather and refuel here. Observe ship movement and fuel transfer on arrival.
+2. Order the fleet to move to A. Shift-queue the rendezvous at B, then a Move to C. Save and reload before arriving at B. Confirm the order stays between A and C.
+3. Repeat with an empty tanker. Check that the gathered fleet can proceed to C. Issue Stop during an active rendezvous and check that gathering stops.
+4. Open the same menu for a manual fleet without a tanker. The command should explain why it is unavailable.
 
-Install with game/launcher closed, obtain the dependencies listed in dw2modlauncher.json separately, and use a disposable campaign/save slot.
-
-1. Give a ship a manual Move order that needs a fuel stop. Verify the saved destination is retained while it refuels and that it resumes the move instead of idling permanently.
-2. Observe tanker service with several eligible fuel requests. Nearby-first service should retain distinct reservations; one delivery must not be silently counted for multiple ships.
-3. Check a stranded or unusable-fuel case on a disposable campaign: show the waiting/failure reason and retain a valid goal instead of repeatedly issuing an impossible route.
-4. Save/reload during refueling and verify the goal/reservation survives. Optional rally behavior remains off unless deliberately enabled; do not infer a default fleet-order change.
-
-Report game/mod/dependency versions, steps, expected/actual result and screenshots. Do not post private campaign files publicly. These checks do not establish live GPU performance or compatibility with every mod stack.
+Report the game version, enabled mods, fleet composition and the step that behaved differently.
