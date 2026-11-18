@@ -12,6 +12,9 @@ internal static partial class Checks
     private static void SeriesColumnChecks(Galaxy galaxy,Empire empire)
     {
         Console.WriteLine("Native checks: Series column and stock Designs header bindings.");
+        Require(DesignsSeriesColumn.RoleWithoutShownSpec("Frigate - Picket","Picket")=="Frigate" &&
+            DesignsSeriesColumn.RoleWithoutShownSpec("Frigate - Picket",null)=="Frigate - Picket" &&
+            DesignsSeriesColumn.RoleWithoutShownSpec("Frigate - Other","Picket")=="Frigate - Other","only remove the specialization displayed in Spec from Role");
         using var metrics=new FontMetrics();using var ui=new NativeUi(galaxy);
         var baseline=Design.Fields.Select(f=>(f.Name,f.Size,f.ShowColumnHeader,f.HorizontalPadding)).ToArray();
         var dialog=new DesignsDialog();dialog.BindGalaxy(galaxy,empire);
@@ -22,7 +25,7 @@ internal static partial class Checks
         Require(layouts.TryGetValue(dialog,out var layout),"actual native Designs initialization attaches scoped Series layout");
         var hit=layout!.HitFields;var native=layout.NativeFields;
         int name=hit.FindIndex(f=>f.Name=="Name");
-        Require(hit[name+1].Name==DesignsSeriesColumn.FieldName&&hit[name+2].Name=="Role","visible and hit-test field order is Name, Series, Role");
+        Require(hit[name+1].Name==DesignsSeriesColumn.FieldName&&hit[name+2].Name==DesignsSeriesColumn.SpecField&&hit[name+3].Name=="Role","visible and hit-test field order is Name, Series, Spec, Role");
         Require(Math.Abs(hit.GetTotalWidth()-Design.Fields.GetTotalWidth())<.001,"Series preserves total native row width");
         Require(layout.Name.Size==Design.Fields.Single(f=>f.Name=="Name").Size,"Series no longer takes width from the native project Name");
         foreach(var field in Design.Fields.Where(f=>f.Name!="Name"))
@@ -140,6 +143,8 @@ internal static partial class Checks
                     Color.White,Color.Black,1,1,1,layout.HitFields,galaxy,empire,null!,ref tips,out _,out _,out _,out _,inView);
                 foreach(var tip in tips.Where(t=>t.Title is "Name" or "Series" or "ShipHull" or "Role"))CheckTooltip(tip,"design-row "+tip.Title+" tooltip");
                 float x=point.X+UserInterfaceHelper.CalculateScaledValue(layout.HitFields.GetFieldPosition(DesignsSeriesColumn.FieldName)+layout.Series.HorizontalPadding);
+                float specX=point.X+UserInterfaceHelper.CalculateScaledValue(layout.HitFields.GetFieldPosition(DesignsSeriesColumn.SpecField)+layout.Spec.HorizontalPadding);
+                Require(layout.SpecHeader?.Text=="Spec"&&SeriesDraws.Any(d=>d.Text==(layout.Specialization(design,galaxy,empire)??"\u2014")&&Math.Abs(d.Position.X-specX)<.01),"separate Spec header and row align");
                 string expected=DesignsSeriesColumn.Fit(layout.Text(design,galaxy,empire),font,
                     UserInterfaceHelper.CalculateScaledValue(layout.Series.Size-layout.Series.HorizontalPadding-4));
                 Require(SeriesDraws.Any(d=>d.Text==expected&&Math.Abs(d.Position.X-x)<.01&&d.Position.Y==point.Y&&d.Color==Color.White),

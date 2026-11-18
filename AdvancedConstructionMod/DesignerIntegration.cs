@@ -14,6 +14,10 @@ internal static class DesignerIntegration
     private static readonly ConditionalWeakTable<DWButton,ShipDesignRenderer> Buttons=new();
     internal static void Install(Harmony harmony)
     {
+        DW2Mod.LiveChannel.Provide<Action<object>>("advanced-construction.refresh-editor-mission",1,editor=>{if(editor is ShipDesignRenderer r)Refresh(r);});
+        DW2Mod.LiveChannel.Provide<Func<object,string?>>("advanced-construction.editor-mission",1,editor=>editor is ShipDesignRenderer r?Session(r)?.SelectedMission:null);
+        DW2Mod.LiveChannel.Provide<Func<object,string,bool>>("advanced-construction.preview-editor-mission",1,(editor,name)=>
+            editor is ShipDesignRenderer renderer && Session(renderer) is {} session && ApplyMission(renderer,session,name));
         Patch("SetupUserInterfaceControls",[typeof(bool)],nameof(AfterSetup));
         Patch("BindUpgradeData",Type.EmptyTypes,nameof(AfterBind));
         foreach(var bind in AccessTools.GetDeclaredMethods(typeof(ShipDesignRenderer)).Where(m=>m.Name=="BindData"))
@@ -103,6 +107,8 @@ internal static class DesignerIntegration
             b.Visible=true;b.PostScene=true;panel.AddControl(b);return b;
         }
         float firstWidth=width*.62f;
+        state.MissionButton=ActionButton("ACM.Specialization","Specialization",pad,y+row+gap,width,()=>ChooseMission(__instance));
+        state.MissionButton.ShowDropDownSelector=true;
         state.TargetButton=ActionButton("ACM.TargetChoice","Target...",pad,y+row+gap,firstWidth,()=>Targets(__instance));state.TargetButton.ShowDropDownSelector=true;
         state.UseCurrent=ActionButton("ACM.UseCurrentTarget","Use this project",pad+firstWidth+gap,y+row+gap,width-firstWidth-gap,()=>UseCurrentTarget(__instance));
         float half=(width-gap)/2;
@@ -135,7 +141,21 @@ internal static class DesignerIntegration
                 if(!ReferenceEquals(state.InputSession,session))
                 {
                     state.InputSession=session;state.ConfirmedText=session?.ClassId!=null?session.ClassName:string.Empty;
-                    state.SeriesInput.Text=session?.ClassId!=null?session.ClassName:SuggestedSeriesName(session?.Draft.Name??string.Empty);state.Error=null;
+                    state.SeriesInput.Text=session?.ClassId!=null?session.ClassName:SuggestedSeriesName(session?.Draft.Name??string.Empty);
+                    state.SuggestedText=session?.ClassId==null?state.SeriesInput.Text:string.Empty;state.Error=null;
+                }
+            }
+            if(state.MissionButton!=null)
+            {
+                var choices=session==null?null:CoherentMissions.Choices(session);
+                bool visible=choices?.Count>0 && DW2Mod.LiveChannel.Get<Func<object,bool>>("coherent-research.editor-mission-visible",1)?.Invoke(renderer)!=true;
+                if(state.MissionVisible!=visible)state.Arranged=false;
+                state.MissionVisible=state.MissionButton.Visible=visible;
+                state.MissionButton.Enabled=visible&&CanChangeWeapons(renderer);
+                if(visible)
+                {
+                    string? selected=session!.SelectedMission;
+                    state.MissionButton.Text="Specialization: "+(selected==null?CoherentMissions.CurrentText(session)??"Choose...":choices!.GetValueOrDefault(selected,selected));
                 }
             }
             if(state.ClassButton!=null)state.ClassButton.Enabled=session!=null;
@@ -181,12 +201,15 @@ internal static class DesignerIntegration
     {
         if(!Editors.TryGetValue(__instance,out var state)||state.InputSession==null||state.SeriesInput==null)return;
         if(state.LastInput!=state.SeriesInput.Text){state.Error=null;state.LastInput=state.SeriesInput.Text;}
-        bool pending=!string.Equals(state.SeriesInput.Text?.Trim(),state.ConfirmedText,StringComparison.Ordinal);
-        if(state.ConfirmButton!=null)state.ConfirmButton.Enabled=pending&&!state.Saving;
+        bool pending=HasUnconfirmedInput(state);
+        bool suggestion=state.InputSession.ClassId==null&&state.ConfirmedText.Length==0&&state.SeriesInput.Text?.Trim()==state.SuggestedText&&state.SuggestedText.Length>0;
+        if(state.ConfirmButton!=null)state.ConfirmButton.Enabled=(pending||suggestion)&&!state.Saving;
         string name=state.SeriesInput.Text?.Trim()??string.Empty;
         bool longName=state.SeriesInput.FontNormal.MeasureString(name).X>state.SeriesInput.Size.X-2*state.SeriesInput.MarginScaled;
-        string summary=state.Error??(longName?name+ (pending?"\nPress OK to confirm.":state.InputSession.Dirty?"\nUnsaved changes: Save / Apply.":string.Empty):pending?"Press OK to confirm the series name.":state.InputSession.Dirty?"Unsaved changes: Save / Apply.":string.Empty);
+        string summary=state.Error??(longName?name+ (pending?"\nPress OK to confirm.":state.InputSession.Dirty?"\nUnsaved changes: Save / Apply.":string.Empty):pending?"Press OK to confirm the series name.":state.InputSession.Dirty?"Unsaved changes: Save / Apply.":suggestion?"Optional series: OK to assign, or Save without.":string.Empty);
         if(state.Error==null&&state.ActivationCount>0)summary+="\n"+state.ActivationCount+" obsolete target(s) become Active after Save / Apply.";
+        if(state.Error==null && state.InputSession.InheritsSeries)
+            summary=string.IsNullOrEmpty(summary)?EditorSession.UpgradeSeriesHint:summary+"\n"+EditorSession.UpgradeSeriesHint;
         bool series=state.InputSession.ClassId!=null;
         if(state.TargetButton!=null)state.TargetButton.Visible=series;if(state.UseCurrent!=null)state.UseCurrent.Visible=series;
         if(state.MoveProject!=null)state.MoveProject.Visible=series&&state.InputSession.HasSavedIdentity;if(state.MoveSeries!=null)state.MoveSeries.Visible=series&&state.InputSession.HasSavedIdentity;
@@ -213,7 +236,12 @@ internal static class DesignerIntegration
         summary.SetSizeAndPosition(new(summary.Size.X,height),summary.Position);
         bool moves=series&&state.InputSession!.HasSavedIdentity;
         state.TargetButton!.Visible=state.UseCurrent!.Visible=series;state.MoveProject!.Visible=state.MoveSeries!.Visible=moves;
-        int rows=1+(series?1:0)+(moves?1:0);
+        float targetY=panel.HeaderHeight+pad+(state.MissionVisible?2:1)*(row+gap);
+        foreach(var button in new[]{state.TargetButton,state.UseCurrent})
+            button!.SetSizeAndPosition(button.Size,new(button.Position.X,targetY));
+        foreach(var button in new[]{state.MoveProject,state.MoveSeries})
+            button!.SetSizeAndPosition(button.Size,new(button.Position.X,targetY+row+gap));
+        int rows=1+(state.MissionVisible?1:0)+(series?1:0)+(moves?1:0);
         summary.SetSizeAndPosition(summary.Size,new(pad,panel.HeaderHeight+pad+rows*(row+gap)));
         float delta=rows*(row+gap)+pad+(summary.Visible?height+gap:0);
         foreach(var (control,position,size) in state.NativeLayout)control.SetSizeAndPosition(size,position+new Vector2(0,delta));
@@ -261,11 +289,58 @@ internal static class DesignerIntegration
         {error??=session.Preview(session.Sources).Error;session.RestorePlan(before);ShowError(error??"This project is not a valid target.");return;}
         Refresh(renderer);
     }
+    private static bool CanChangeWeapons(ShipDesignRenderer renderer) =>
+        AccessTools.Field(typeof(ShipDesignRenderer),"_DesignIsEditable").GetValue(renderer) is true &&
+        AccessTools.Field(typeof(ShipDesignRenderer),"_ForeignMode").GetValue(renderer) is false;
+
+    private static void ChooseMission(ShipDesignRenderer renderer)
+    {
+        var session=Session(renderer);
+        if(session==null || !CanChangeWeapons(renderer) || CoherentMissions.Choices(session) is not {Count:>0} choices)return;
+        _=new SeriesChoiceWindow("SPECIALIZATION",choices.Select(pair=>(pair.Value,(Action)(()=>ApplyMission(renderer,session,pair.Key)))),
+            footer:"Choose to preview the loadout. Save keeps the edited design.");
+    }
+
+    private static bool ApplyMission(ShipDesignRenderer renderer,EditorSession session,string mission)
+    {
+        if(!ReferenceEquals(Session(renderer),session)||!CanChangeWeapons(renderer))return false;
+        var previous=session.Draft;
+        var oldMission=session.SelectedMission;
+        var field=AccessTools.Field(typeof(ShipDesignRenderer),"_Design");
+        try
+        {
+            var preview=CoherentMissions.Preview(session,mission);
+            if(preview==null){ShowError("Coherent could not design this specialization on this hull.");return false;}
+            session.SetMissionPreview(preview,mission);
+            field.SetValue(renderer,preview);
+            renderer.DesignSummary?.BindData(preview);
+            renderer.UpdateData(preview);
+            renderer.BindTacticsButtons(preview,null!);
+            Refresh(renderer);
+            return true;
+        }
+        catch(Exception ex)
+        {
+            session.SetMissionPreview(previous,oldMission);
+            field.SetValue(renderer,previous);
+            try{renderer.DesignSummary?.BindData(previous);renderer.UpdateData(previous);renderer.BindTacticsButtons(previous,null!);}
+            catch(Exception refreshError){System.Diagnostics.Trace.TraceWarning("Could not refresh original preview: {0}",refreshError.Message);}
+            ShowError("Could not preview this specialization: "+ex.GetBaseException().Message);
+            return false;
+        }
+    }
     private static void Move(ShipDesignRenderer renderer,bool whole)
     {
         if(!StageInput(renderer,out _))return;var session=Session(renderer);if(session?.ClassId==null)return;
         if(!session.HasSavedIdentity){ShowError("Save this new project before transferring saved projects or an entire series.");return;}
         _=new TransferWindow(session,whole,()=>Refresh(renderer));
+    }
+    private static void RejectedSeries(ShipDesignRenderer renderer,EditorState state,EditorSession session,string? error)
+    {
+        if(session.InheritsSeries && error==EditorSession.UpgradeSeriesHint)
+            state.SeriesInput!.Text=state.LastInput=state.ConfirmedText=session.ClassName;
+        state.Error=error;
+        UpdateInputState(renderer);
     }
     private static void ConfirmSeries(ShipDesignRenderer renderer)
     {
@@ -274,7 +349,7 @@ internal static class DesignerIntegration
         try
         {
             var session=Session(renderer);if(session==null||!ReferenceEquals(state.InputSession,session)||state.Saving)return;
-            if(!session.SelectSeriesName(state.SeriesInput!.Text,out var error)){state.Error=error;UpdateInputState(renderer);return;}
+            if(!session.SelectSeriesName(state.SeriesInput!.Text,out var error)){RejectedSeries(renderer,state,session,error);return;}
             state.ConfirmedText=session.ClassId==null?string.Empty:session.ClassName;state.SeriesInput.Text=state.ConfirmedText;state.LastInput=state.ConfirmedText;state.Error=null;Refresh(renderer);
         }
         catch(Exception ex){state.Error=ex.Message;UpdateInputState(renderer);}
@@ -293,7 +368,7 @@ internal static class DesignerIntegration
             popup.BindData(values,index=>
             {
                 if(!ReferenceEquals(state.InputSession,session)||state.Saving||index<0||index>choices.Length)return;
-                if(!session.SelectClass(index==0?null:choices[index-1].Key,out var error)){ShowError(error!);return;}
+                if(!session.SelectClass(index==0?null:choices[index-1].Key,out var error)){RejectedSeries(renderer,state,session,error);ShowError(error!);return;}
                 state.ConfirmedText=session.ClassId==null?string.Empty:session.ClassName;state.SeriesInput!.Text=state.ConfirmedText;state.LastInput=state.ConfirmedText;state.Error=null;Refresh(renderer);
             },UserInterfaceController.ScreenWidth,UserInterfaceController.ScreenHeight,state.SeriesInput!.Size.X+button.Size.X);
             popup.ExtraData=state;state.Popup=popup;popup.PostScene=true;
@@ -310,12 +385,25 @@ internal static class DesignerIntegration
         name=Regex.Replace(name,@"\s+(?=[MDCLXVI]+$)M{0,3}(?:CM|CD|D?C{0,3})(?:XC|XL|L?X{0,3})(?:IX|IV|V?I{0,3})$",string.Empty).TrimEnd();
         return name.Length is >0 and <=80?name:string.Empty;
     }
+    private static bool HasUnconfirmedInput(EditorState state)
+    {
+        string text=state.SeriesInput?.Text?.Trim()??string.Empty;
+        if(text==state.ConfirmedText)return false;
+        // A generated name is a suggestion, not the player's consent to create a series.
+        return !(state.InputSession?.ClassId==null&&state.ConfirmedText.Length==0&&text==state.SuggestedText);
+    }
     private static bool StageInput(ShipDesignRenderer renderer,out string? error)
     {
         var session=Session(renderer);var state=Editors.GetOrCreateValue(renderer);
         if(session==null){error="Series data is unavailable for this design.";return false;}
         if(state.SeriesInput==null){error=null;return true;}
-        if(!string.Equals(state.SeriesInput.Text?.Trim(),state.ConfirmedText,StringComparison.Ordinal))
+        if(HasUnconfirmedInput(state)&&session.InheritsSeries)
+        {
+            error=EditorSession.UpgradeSeriesHint;
+            RejectedSeries(renderer,state,session,error);
+            return false;
+        }
+        if(HasUnconfirmedInput(state))
         {error="Confirm the series name with OK before Save / Apply.";state.Error=error;UpdateInputState(renderer);return false;}
         error=null;return true;
     }
@@ -363,12 +451,16 @@ internal static class DesignerIntegration
             var session=Session(__instance);
             if(session==null)return true;
             if(!StageInput(__instance,out var inputError))return false;
-            if(!session.Dirty&&(session.Origin==null||session.ClassId==null))return true;
+            bool seriesCommit=session.Dirty || session.Origin!=null&&session.ClassId!=null;
+            if(!seriesCommit && session.SelectedMission==null)return true;
+            if(session.SelectedMission!=null && !CanChangeWeapons(__instance)){ShowError("The equipment on this design is locked. Use Upgrade or Copy as New.");return false;}
             var registry=ConstructionCampaigns.Get(session.Galaxy,session.Empire);Monitor.Enter(registry.Gate);
             var context=new SaveContext(registry.Gate,session);
             try
             {
                 if(!session.Fresh(out var error)){context.Release();ShowError(error!);return false;}
+                context.SeriesCommit=seriesCommit;
+                if(!seriesCommit){Editors.GetOrCreateValue(__instance).Saving=true;__state=context;return true;}
                 var changes=session.Sources.ToList();
                 if(session.Origin!=null&&session.ClassId!=null&&!changes.Any(c=>c.SourceDesignId==session.Origin.DesignId))changes.Add(new(session.Origin.DesignId,session.Draft.DesignId,true));
                 var preview=session.Preview(changes);
@@ -388,13 +480,19 @@ internal static class DesignerIntegration
         {
             var session=__state.Session;
             if(!session.Published)return; // Native validation kept the draft open; its own message explains the failure.
-            if(!session.Commit(session.Draft,session.Capture(),out var error))
+            if(__state.SeriesCommit && !session.Commit(session.Draft,session.Capture(),out var error))
             {
                 if(session.Origin!=null){session.Origin.UpgradeDesignId=__state.OldArrow;session.Origin.Obsolete=__state.OldObsolete;}
                 ShowError("The design was saved, but series/path changes were not applied. Previous source paths were retained. "+error);
             }
             else
             {
+                if(session.SelectedMission!=null)
+                {
+                    if(!CoherentMissions.SaveSelection(session))ShowError("The loadout was saved, but Coherent could not save its specialization.");
+                    else session.SetMissionPreview(session.Draft,null);
+                }
+                else if(session.Origin!=null)CoherentMissions.CopyAfterUpgrade(session.Galaxy,session.Origin,session.Draft);
                 try{DesignsSeriesColumn.RefreshCommittedSeries(session.Galaxy,session.Empire);}
                 catch(Exception ex){ShowError("Series and paths were saved, but the Designs list could not refresh. Reopen Designs. "+ex.Message);}
             }
@@ -431,9 +529,11 @@ internal static class DesignerIntegration
     {
         private readonly object gate;private bool held=true;
         internal readonly EditorSession Session;internal readonly int OldArrow;internal readonly bool OldObsolete;
+        internal bool SeriesCommit;
         internal SaveContext(object gate,EditorSession session){this.gate=gate;Session=session;OldArrow=session.Origin?.UpgradeDesignId??int.MinValue;OldObsolete=session.Origin?.Obsolete??false;}
         internal void Release(){if(!held)return;held=false;Monitor.Exit(gate);}
     }
     private sealed class EditorState
-    {internal DWPanel? Panel;internal DWButton? ClassButton,SourceButton,RenameButton,ConfirmButton,TargetButton,UseCurrent,MoveProject,MoveSeries;internal DWLabel? Summary,Target;internal string ConfirmedText="",EffectiveText="",LastInput="",NativeToCaption="";internal DWTextBox? SeriesInput;internal PopupList? Popup;internal EditorSession? Session,InputSession;internal bool Saving,ClosedDuringSave,Arranged,SeriesMode;internal int ActivationCount;internal string? Error;internal float Pad,Row,NativeHeight;internal (DWControl Control,Vector2 Position,Vector2 Size)[] NativeLayout=[];}
+    {internal DWButton? MissionButton;internal bool MissionVisible;
+     internal DWPanel? Panel;internal DWButton? ClassButton,SourceButton,RenameButton,ConfirmButton,TargetButton,UseCurrent,MoveProject,MoveSeries;internal DWLabel? Summary,Target;internal string ConfirmedText="",SuggestedText="",EffectiveText="",LastInput="",NativeToCaption="";internal DWTextBox? SeriesInput;internal PopupList? Popup;internal EditorSession? Session,InputSession;internal bool Saving,ClosedDuringSave,Arranged,SeriesMode;internal int ActivationCount;internal string? Error;internal float Pad,Row,NativeHeight;internal (DWControl Control,Vector2 Position,Vector2 Size)[] NativeLayout=[];}
 }

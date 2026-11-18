@@ -8,11 +8,12 @@ internal sealed class SeriesChoiceWindow:NativeWindow
 {
     private readonly (string Text,Action Pick)[] choices;
     private readonly Action? returnTo;
+    private readonly string footer;
     private readonly DistantWorlds.UI.DWButton[] rows;
     private int page;
-    internal SeriesChoiceWindow(string title,IEnumerable<(string Text,Action Pick)> choices,Action? returnTo=null,string? explanation=null):base("ACM.Choices",title,720,540)
+    internal SeriesChoiceWindow(string title,IEnumerable<(string Text,Action Pick)> choices,Action? returnTo=null,string? explanation=null,string? footer=null):base("ACM.Choices",title,720,540)
     {
-        this.choices=choices.ToArray();this.returnTo=returnTo;
+        this.choices=choices.ToArray();this.returnTo=returnTo;this.footer=footer??"Choice returns to the previous screen; Save / Apply commits it.";
         float help=explanation==null?0:S(72);
         if(explanation!=null)Label("ACM.ChoiceHelp",explanation,S(12),S(40),Panel.Size.X-S(24),S(64));
         int count=Math.Max(1,(int)((Panel.Size.Y-S(148)-help)/S(44)));
@@ -31,7 +32,7 @@ internal sealed class SeriesChoiceWindow:NativeWindow
         }
         foreach(var control in Panel.Controls.OfType<DistantWorlds.UI.DWButton>())
         {if(control.Name=="ACM.ChoicePrevious")control.Enabled=page>0;else if(control.Name=="ACM.ChoiceNext")control.Enabled=(page+1)*rows.Length<choices.Length;}
-        Message(choices.Length==0?"No compatible choices. Cancel to keep the current plan.":$"Page {page+1} / {Math.Max(1,(choices.Length+rows.Length-1)/rows.Length)}. Choice returns to the previous screen; Save / Apply commits it.");
+        Message(choices.Length==0?"No compatible choices. Cancel to keep the current plan.":$"Page {page+1} / {Math.Max(1,(choices.Length+rows.Length-1)/rows.Length)}. {footer}");
     }
     private void Choose(int i){int n=page*rows.Length+i;if(n>=choices.Length||!ReferenceEquals(Active,this))return;Close();choices[n].Pick();}
     internal override void Close(){bool active=ReferenceEquals(Active,this);base.Close();if(active)returnTo?.Invoke();}

@@ -42,6 +42,7 @@ internal static class RetrofitAdmission
         lock(registry.Gate)
         {
             if(!registry.TryGet(empire,out var state,out _))return false;
+            if(state.ManualRetrofits.TryGetValue(ship.ShipId,out var manual))return SelectedRetrofit.Allows(ship,empire,target,manual);
             Design? source=ship.GetDesign();
             if(source==null || !state.DesignClasses.TryGetValue(source.DesignId,out var sourceClass))return true;
             return source.UpgradeDesignId!=ConstructionGraph.Disabled && target!=null && !target.Obsolete &&
@@ -84,6 +85,7 @@ internal static class RetrofitAdmission
         var registry=ConstructionCampaigns.Get(galaxy!,empire);
         Monitor.Enter(registry.Gate);__state=registry.Gate;
         if(!registry.TryGet(empire,out var state,out _))return false;
+        if(state.ManualRetrofits.TryGetValue(__instance.ShipId,out var manual))return SelectedRetrofit.Allows(__instance,empire,retrofitDesign,manual);
         var source=__instance.GetDesign();
         if(source!=null&&state.DesignClasses.TryGetValue(source.DesignId,out var ownClass))
         {
@@ -98,6 +100,12 @@ internal static class RetrofitAdmission
         Galaxy? galaxy=GalaxyOf(__instance);
         if(galaxy==null)return false;
         var gate=ConstructionCampaigns.Get(galaxy,empire).Gate;Monitor.Enter(gate);__state=gate;
+        if(SelectedRetrofit.HasOrder(__instance,empire,out var manual))
+        {
+            var exact=galaxy.Designs.GetById(manual.TargetDesignId);
+            if(!SelectedRetrofit.Allows(__instance,empire,exact,manual))return false;
+            designId=manual.TargetDesignId;return true;
+        }
         if(Allows(__instance,empire,galaxy.Designs.GetById(designId)))return true;
         // A design may have changed class while the ship was travelling to the yard.
         // Re-evaluate the ship's existing rule, without allowing a cross-class fallback.
@@ -107,12 +115,17 @@ internal static class RetrofitAdmission
         if(!Allows(__instance,empire,latest))return false;
         designId=latest.DesignId;return true;
     }
-    private static bool BeforeYard(Galaxy galaxy,Empire empire,Ship ship,ConstructionType constructionType,int designId,out object? __state)
+    private static bool BeforeYard(Galaxy galaxy,Empire empire,Ship ship,ConstructionType constructionType,ref int designId,out object? __state)
     {
         __state=null;
         if(constructionType!=ConstructionType.Retrofit || ship==null)return true;
         var owner=ship.GetEmpireCached(galaxy);
         var gate=ConstructionCampaigns.Get(galaxy).Gate;Monitor.Enter(gate);__state=gate;
+        if(owner!=null&&SelectedRetrofit.HasOrder(ship,owner,out var manual))
+        {
+            if(!SelectedRetrofit.Allows(ship,owner,galaxy.Designs.GetById(manual.TargetDesignId),manual))return false;
+            designId=manual.TargetDesignId;return true;
+        }
         return owner!=null && Allows(ship,owner,galaxy.Designs.GetById(designId));
     }
     private static Exception? FinishAdmission(Exception? __exception,object? __state)
@@ -134,8 +147,9 @@ internal static class RetrofitAdmission
                 next.DesignClasses.TryGetValue(design.DesignId,out var b)&&(movedSeries.Contains(b)||changedTargets.Contains(ConstructionSnapshot.TargetKey(b,(int)design.GetRole(galaxy)))))affected.Add(design.DesignId);
         foreach(int id in (preview.ObsoleteValues??new Dictionary<int,bool>()).Keys)affected.Add(id);
         if(affected.Count==0)return true;
+        // Live ship lists can contain transient empty entries; only actual retrofit orders need a design lookup.
         foreach(var ship in empire.Ships)
-            if(affected.Contains(ship.DesignId)&&ship.Mission?.Type==ShipMissionType.Retrofit)
+            if(ship?.Mission?.Type==ShipMissionType.Retrofit&&affected.Contains(ship.DesignId))
             {error=$"{ship.Name} already has a Retrofit order. Cancel it or let it finish before changing this series.";return false;}
         var systems=galaxy.Ships.Where(s=>s!=null&&s.ConstructionSystem!=null).Select(s=>s.ConstructionSystem)
             .Concat(galaxy.Orbs.Where(o=>o?.Colony?.ConstructionSystem!=null).Select(o=>o.Colony!.ConstructionSystem)).Distinct();

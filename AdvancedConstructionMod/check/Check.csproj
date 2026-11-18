@@ -9,7 +9,9 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="../AdvancedConstructionMod.csproj" />
+    <Content Include="$(GameRoot)/data/Hints.txt" Link="data/Hints.txt" CopyToOutputDirectory="PreserveNewest" />
     <Compile Include="../../Shared/check/NativeUi.cs" Link="NativeUi.cs" />
     <Reference Include="0Harmony;DistantWorlds.Core;DistantWorlds.Types;DistantWorlds.UI;DistantWorlds2;Stride;Stride.Core;Stride.Core.Mathematics;Stride.Core.Serialization;Stride.Engine;Stride.Games;Stride.Graphics;Stride.Input;Stride.Rendering" HintPath="$(GameRoot)/%(Identity).dll" Private="false" />
   </ItemGroup>
+  <ItemGroup><Compile Include="../../Shared/check/TestOutput.cs" Link="TestOutput.cs" /></ItemGroup>
 </Project>

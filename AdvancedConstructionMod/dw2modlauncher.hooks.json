@@ -1,0 +1,259 @@
+{
+  "schema": 1,
+  "claims": [
+    {
+      "target": "DistantWorlds.Types.Galaxy:WriteToStream(System.IO.BinaryWriter,DistantWorlds.Types.GameGalaxyData)",
+      "partner": "Freight Dispatch",
+      "self": {
+        "hash": "3b4372b4b6e6",
+        "facts": [
+          "finalizer | changes-result | prio 400 | before [] | after [] | (System.Exception __exception, System.Object __state) -> System.Exception",
+          "prefix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Galaxy __instance, ref System.Object __state) -> System.Void"
+        ]
+      },
+      "other": {
+        "hash": "f7199394baeb",
+        "facts": [
+          "prefix | observes | prio 800 | before [] | after [] | (DistantWorlds.Types.Galaxy __instance) -> System.Void"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:Update(System.Single,Stride.Core.Mathematics.Point,System.Int32,System.Int32)",
+      "partner": "Freight Dispatch",
+      "self": {
+        "hash": "ce0e7c64cae1",
+        "facts": [
+          "postfix | observes | prio 400 | before [] | after [] | () -> System.Void"
+        ]
+      },
+      "other": {
+        "hash": "ce0e7c64cae1",
+        "facts": [
+          "postfix | observes | prio 400 | before [] | after [] | () -> System.Void"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds2.DWGame:SaveGame(System.String)",
+      "partner": "Freight Dispatch",
+      "self": {
+        "hash": "d455b859f023",
+        "facts": [
+          "finalizer | changes-result | prio 400 | before [] | after [] | (System.Exception __exception, AdvancedConstructionMod.SavePreflight+Scope __state) -> System.Exception",
+          "prefix | observes | prio 0 | before [] | after [] | (DistantWorlds2.DWGame __instance, ref AdvancedConstructionMod.SavePreflight+Scope __state) -> System.Void"
+        ]
+      },
+      "other": {
+        "hash": "d3fc96b4baa7",
+        "facts": [
+          "finalizer | changes-result | prio 400 | before [] | after [] | (System.Exception __exception, DistantWorlds.Types.Galaxy __state) -> System.Exception",
+          "prefix | skips-original | prio 800 | before [] | after [] | (DistantWorlds2.DWGame __instance, ref DistantWorlds.Types.Galaxy __state) -> System.Boolean"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds2.InputSystem:HandleKeyPress(DistantWorlds.Types.Galaxy,DistantWorlds.Types.KeyMapping,Stride.Games.GameTime,System.Single,System.Single,System.Single)",
+      "partner": "Freight Dispatch",
+      "self": {
+        "hash": "f031162936d0",
+        "facts": [
+          "prefix | skips-original | prio 800 | before [] | after [] | (DistantWorlds.Types.KeyMapping keyMapping) -> System.Boolean"
+        ]
+      },
+      "other": {
+        "hash": "29e9fa910cdd",
+        "facts": [
+          "prefix | skips-original | prio 400 | before [] | after [] | (DistantWorlds.Types.KeyMapping keyMapping) -> System.Boolean"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:Update(System.Single,Stride.Core.Mathematics.Point,System.Int32,System.Int32)",
+      "partner": "Weapon FX Tuner",
+      "self": {
+        "hash": "ce0e7c64cae1",
+        "facts": [
+          "postfix | observes | prio 400 | before [] | after [] | () -> System.Void"
+        ]
+      },
+      "other": {
+        "hash": "5e58c060e5fd",
+        "facts": [
+          "postfix | observes | prio 400 | before [] | after [] | (System.Int32 screenHeight) -> System.Void"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds2.InputSystem:HandleKeyPress(DistantWorlds.Types.Galaxy,DistantWorlds.Types.KeyMapping,Stride.Games.GameTime,System.Single,System.Single,System.Single)",
+      "partner": "Weapon FX Tuner",
+      "self": {
+        "hash": "f031162936d0",
+        "facts": [
+          "prefix | skips-original | prio 800 | before [] | after [] | (DistantWorlds.Types.KeyMapping keyMapping) -> System.Boolean"
+        ]
+      },
+      "other": {
+        "hash": "29e9fa910cdd",
+        "facts": [
+          "prefix | skips-original | prio 400 | before [] | after [] | (DistantWorlds.Types.KeyMapping keyMapping) -> System.Boolean"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:WriteToStream(System.IO.BinaryWriter,DistantWorlds.Types.GameGalaxyData)",
+      "partner": "Battle Log",
+      "self": {
+        "hash": "3b4372b4b6e6",
+        "facts": [
+          "finalizer | changes-result | prio 400 | before [] | after [] | (System.Exception __exception, System.Object __state) -> System.Exception",
+          "prefix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Galaxy __instance, ref System.Object __state) -> System.Void"
+        ]
+      },
+      "other": {
+        "hash": "f7199394baeb",
+        "facts": [
+          "prefix | observes | prio 800 | before [] | after [] | (DistantWorlds.Types.Galaxy __instance) -> System.Void"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:Update(System.Single,Stride.Core.Mathematics.Point,System.Int32,System.Int32)",
+      "partner": "Battle Log",
+      "self": {
+        "hash": "ce0e7c64cae1",
+        "facts": [
+          "postfix | observes | prio 400 | before [] | after [] | () -> System.Void"
+        ]
+      },
+      "other": {
+        "hash": "5e58c060e5fd",
+        "facts": [
+          "postfix | observes | prio 400 | before [] | after [] | (System.Int32 screenHeight) -> System.Void"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds2.InputSystem:HandleKeyPress(DistantWorlds.Types.Galaxy,DistantWorlds.Types.KeyMapping,Stride.Games.GameTime,System.Single,System.Single,System.Single)",
+      "partner": "Battle Log",
+      "self": {
+        "hash": "f031162936d0",
+        "facts": [
+          "prefix | skips-original | prio 800 | before [] | after [] | (DistantWorlds.Types.KeyMapping keyMapping) -> System.Boolean"
+        ]
+      },
+      "other": {
+        "hash": "29e9fa910cdd",
+        "facts": [
+          "prefix | skips-original | prio 400 | before [] | after [] | (DistantWorlds.Types.KeyMapping keyMapping) -> System.Boolean"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:AddShipToConstruct(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Int16,DistantWorlds.Types.Ship,DistantWorlds.Types.ConstructionType,System.Int32,System.Boolean,DistantWorlds.Types.CargoList,DistantWorlds.Types.CargoList,System.Boolean,System.Boolean)",
+      "partner": "Ship Logistics",
+      "self": {
+        "hash": "b464bde5e7aa",
+        "facts": [
+          "finalizer | changes-result | prio 400 | before [] | after [] | (System.Exception __exception, System.Object __state) -> System.Exception",
+          "prefix | skips-original | prio 0 | before [] | after [] | (DistantWorlds.Types.Galaxy galaxy, DistantWorlds.Types.Empire empire, DistantWorlds.Types.Ship ship, DistantWorlds.Types.ConstructionType constructionType, ref System.Int32 designId, ref System.Object __state) -> System.Boolean"
+        ]
+      },
+      "other": {
+        "hash": "dd4c9905991d",
+        "facts": [
+          "prefix | changes-args | prio 400 | before [] | after [] | (DistantWorlds.Types.Galaxy galaxy, DistantWorlds.Types.Ship ship, DistantWorlds.Types.ConstructionType constructionType, ref System.Int32 designId) -> System.Void"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionCore(DistantWorlds.Types.ShipMission,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.CargoReservationList,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "partner": "Ship Logistics",
+      "self": {
+        "hash": "ba9371944485",
+        "facts": [
+          "finalizer | changes-result | prio 400 | before [] | after [] | (DistantWorlds.Types.Ship __instance, DistantWorlds.Types.Ship __state, System.Exception __exception) -> System.Exception",
+          "postfix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Ship __instance, DistantWorlds.Types.ShipMission mission, System.Boolean manuallyAssigned, System.Boolean revertingPreviousMission) -> System.Void",
+          "prefix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Ship __instance, DistantWorlds.Types.ShipMission mission, System.Boolean revertingPreviousMission, ref DistantWorlds.Types.Ship __state) -> System.Void"
+        ]
+      },
+      "other": {
+        "hash": "bea3773cd131",
+        "facts": [
+          "prefix | skips-original | prio 400 | before [] | after [] | (DistantWorlds.Types.Ship __instance, DistantWorlds.Types.ShipMission mission, DistantWorlds.Types.CargoReservationList resourceReservations, System.Boolean manuallyAssigned, System.Boolean revertingPreviousMission, System.Boolean changeToManual) -> System.Boolean",
+          "prefix | skips-original | prio 400 | before [] | after [] | (DistantWorlds.Types.Ship __instance, DistantWorlds.Types.ShipMission mission, System.Boolean manuallyAssigned) -> System.Boolean"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:RevertToPreviousMission(DistantWorlds.Types.Empire,System.DateTime)",
+      "partner": "Ship Logistics",
+      "self": {
+        "hash": "6c0663446845",
+        "facts": [
+          "finalizer | changes-result | prio 400 | before [] | after [] | (DistantWorlds.Types.Ship __instance, DistantWorlds.Types.Ship __state, System.Exception __exception) -> System.Exception",
+          "prefix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Ship __instance, ref DistantWorlds.Types.Ship __state) -> System.Void"
+        ]
+      },
+      "other": {
+        "hash": "4209f87b77ce",
+        "facts": [
+          "postfix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Ship __instance, System.Boolean __result) -> System.Void"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds.UI.DWButton:SetButtonForGameTask(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.UI.DWButton,DistantWorlds.Types.GameTask,System.Object,System.Single,DistantWorlds.Types.Side,Stride.Core.Mathematics.Color,System.String&,DistantWorlds.Types.GameTaskList)",
+      "partner": "Ship Logistics",
+      "self": {
+        "hash": "e988587309ee",
+        "facts": [
+          "postfix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Galaxy galaxy, DistantWorlds.Types.Empire empire, DistantWorlds.UI.DWButton button, DistantWorlds.Types.GameTask task, System.Object selected) -> System.Void",
+          "prefix | observes | prio 400 | before [] | after [] | (DistantWorlds.UI.DWButton button) -> System.Void"
+        ]
+      },
+      "other": {
+        "hash": "20356ccfe223",
+        "facts": [
+          "postfix | changes-args | prio 400 | before [] | after [] | (DistantWorlds.Types.Galaxy galaxy, DistantWorlds.UI.DWButton button, DistantWorlds.Types.GameTask task, ref System.String tooltip) -> System.Void",
+          "postfix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Empire empire, DistantWorlds.UI.DWButton button, DistantWorlds.Types.GameTask task, System.Single hoverTipWidth, DistantWorlds.Types.Side hoverTipSide, System.String tooltip) -> System.Void",
+          "prefix | changes-args | prio 400 | before [] | after [] | (DistantWorlds.Types.GameTask task, ref System.Single hoverTipWidth) -> System.Void"
+        ]
+      },
+      "reviewed": "2026-11-16"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:CreateShipDesigns(System.Int64,System.Boolean)",
+      "partner": "Coherent R&D",
+      "self": {
+        "hash": "326ffc225105",
+        "facts": [
+          "finalizer | changes-result | prio 400 | before [] | after [] | (System.Exception __exception, AdvancedConstructionMod.SeriesAutomation+Generation __state) -> System.Exception",
+          "prefix | skips-original | prio 400 | before [] | after [] | (DistantWorlds.Types.Empire __instance, System.Boolean forceCreate, ref AdvancedConstructionMod.SeriesAutomation+Generation __state) -> System.Boolean"
+        ]
+      },
+      "other": {
+        "hash": "71bd5cb3c3ba",
+        "facts": [
+          "finalizer | changes-result | prio 400 | before [] | after [] | (DistantWorlds.Types.Empire __instance, DistantWorlds.Types.EmpirePolicy __state, System.Exception __exception) -> System.Exception",
+          "prefix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Empire __instance) -> System.Void",
+          "prefix | observes | prio 400 | before [] | after [] | (DistantWorlds.Types.Empire __instance, ref DistantWorlds.Types.EmpirePolicy __state) -> System.Void"
+        ]
+      },
+      "reviewed": "2026-11-18",
+      "note": "Steam beta 1.3.8.7, ACM 0.6.1 and Coherent integration 1.0.43. Mixed-hull research generated one successor for each owner and zero on repeat. Only the observed integration-mode generator hooks are covered."
+    }
+  ]
+}

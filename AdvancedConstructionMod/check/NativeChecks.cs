@@ -21,7 +21,7 @@ internal static partial class Checks
     private static DesignFact[] Facts(Galaxy galaxy,Empire empire) => empire.Designs.Select(d=>(DesignFact)AccessTools.Method(Module.GetType("AdvancedConstructionMod.RetrofitRuntime"),"Fact").Invoke(null,[galaxy,empire,d])!).ToArray();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static void Native(string root,string fixture)
+    private static void Native(string root,string fixture,bool selectedOnly=false,string? coherent=null,bool mixedResearch=false,bool inspectMissions=false)
     {
         string sourceHash=Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(fixture)));
         RuntimeHelpers.RunModuleConstructor(typeof(Galaxy).Module.ModuleHandle);
@@ -49,6 +49,38 @@ internal static partial class Checks
         Galaxy.ComponentsStatic=galaxy.Components;Galaxy.ResearchProjectsStatic=galaxy.ResearchProjects;Galaxy.PlanetaryFacilitiesStatic=galaxy.PlanetaryFacilities;
         var empire=galaxy.Empires.GetPlayer();
         empire.Research.Update(galaxy,empire,galaxy.Races.GetById(empire.DominantRaceId),empire.Policy,empire.IsPirate,empire.IsPlayer,out _);
+        if(inspectMissions)
+        {
+            foreach(var design in empire.Designs.Where(d=>d.GetRole(galaxy) is ShipRole.Escort or ShipRole.Frigate).OrderBy(d=>d.DesignId))
+            {
+                var bays=design.GetShipHull(galaxy).ComponentBays.GetBaysByType(ComponentBayType.Weapon);
+                var guns=design.Components.Where(c=>!c.IsEmpty&&bays.GetById(c.ComponentBayId)!=null);
+                string mission=getSaved(galaxy,"coherent-research","design."+design.DesignId);
+                Console.WriteLine($"#{design.DesignId} {design.Name} [{design.GetRole(galaxy)}] mission={mission??"none"} obsolete={design.Obsolete} tactics={design.Tactics.AttackRangeNormal}/{design.Tactics.AttackRangeStronger} weapons={string.Join(", ",guns.Select(c=>c.Component.Name))}");
+            }
+            Require(sourceHash==Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(fixture))),"read-only mission inspection preserved fixture");
+            return;
+        }
+        if(coherent!=null)
+        {
+            if(mixedResearch)
+            {
+                try{MixedResearch(galaxy,empire,coherent);}
+                finally{Require(sourceHash==Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(fixture))),"mixed-research fixture hash preserved");}
+                return;
+            }
+            CheckCoherentMissions(galaxy,empire,coherent);
+            var missions=empire.Designs.Select(d=>(d.DesignId,
+                Mission:getSaved(galaxy,"coherent-research","design."+d.DesignId))).Where(row=>row.Mission is "Picket" or "Long").ToArray();
+            using var serialized=new MemoryStream();
+            using(var writer=new BinaryWriter(serialized,System.Text.Encoding.UTF8,true))galaxy.WriteToStream(writer,header);
+            serialized.Position=0;
+            using var missionReader=new BinaryReader(serialized,System.Text.Encoding.UTF8,true);
+            var loaded=new Galaxy().ReadFromStream(missionReader,out _,out var errors);
+            Require(errors.Count==0&&missions.Length>=3&&missions.All(pair=>getSaved(loaded,"coherent-research","design."+pair.DesignId)==pair.Mission),"native save/load retains per-design missions");
+            Require(sourceHash==Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(fixture))),"Coherent fixture unchanged");
+            return;
+        }
         var store=Storage(galaxy,empire.EmpireId);
         Require(Read(store)==null,"new campaign has no ACM metadata");
         var state=new ConstructionSnapshot();
@@ -78,6 +110,18 @@ internal static partial class Checks
         ExpectFailure(()=>Write(store,changed),"failure after header write reported");
         Require(getSaved(galaxy,Owner,prefix+".head")==head && Serialized(Read(store)!)==Serialized(state),"partial header commit rolls back to prior complete graph");
         Entry.Init();Entry.Init();
+        SaveAdmissionChecks(galaxy,empire,unclassified);
+        if(selectedOnly)
+        {
+            Galaxy Roundtrip(Galaxy current)
+            {
+                using var bytes=new MemoryStream();using(var output=new BinaryWriter(bytes,System.Text.Encoding.UTF8,true))current.WriteToStream(output,header);
+                bytes.Position=0;using var read=new BinaryReader(bytes,System.Text.Encoding.UTF8,true);var loaded=new Galaxy().ReadFromStream(read,out _,out var errors);
+                Require(errors.Count==0,"selected fixture actual native save/load has no read failures");return loaded;
+            }
+            SelectedRetrofitChecks(galaxy,empire,h1,b2,Roundtrip,root);
+            Require(sourceHash==Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(fixture))),"selected fixture source save stays unchanged");return;
+        }
         var resolver=AccessTools.Method(typeof(Design),nameof(Design.ResolveRetrofitDesignId),[typeof(Galaxy),typeof(Empire),typeof(Design).MakeByRefType()]);
         Require(Harmony.GetPatchInfo(resolver)!.Owners.Count(o=>o=="local.dw2.advanced-construction")==1,"runtime hooks initialize idempotently");
         foreach(int mode in new[]{-1,-2,-3})
@@ -143,6 +187,7 @@ internal static partial class Checks
         galaxy.GlobalVariables=priorVariables;Forget(galaxy);
         Require(sourceHash==Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(fixture))),"source campaign hash remains unchanged");
         Console.WriteLine("Native checks only: no live game, profile, installed mod or real save mutation.");
+        Native(root,fixture,true);
     }
     private static void ExpectFailure(Action action,string name)
     {

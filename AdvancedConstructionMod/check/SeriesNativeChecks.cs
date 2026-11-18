@@ -23,6 +23,7 @@ internal static partial class Checks
         var dest=Add("Destination head",b,15);var destOld=Add("Destination obsolete head",b,11,true);
         string key=ConstructionSnapshot.TargetKey(a,(int)old.GetRole(galaxy)),destKey=ConstructionSnapshot.TargetKey(b,(int)dest.GetRole(galaxy));
         Require(registry.TryRestore(empire,state,out _),"prepare isolated native target fixture");
+        TransferPreviewChecks(galaxy,empire,latest,dest);
         var edit=new EditorSession(galaxy,empire,latest,null);string before=Serialized(state);
         Require(edit.SetTarget(old.DesignId,false,out _)&&edit.Projection().Preview.ObsoleteValues!.ContainsKey(old.DesignId),"old target explicitly previews activation");
         Require(old.Obsolete&&Serialized(Read(Storage(galaxy,empire.EmpireId))!)==before,"target preview leaves native obsolete flag and Matrix unchanged");

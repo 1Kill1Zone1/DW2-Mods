@@ -26,6 +26,9 @@ public static class Entry
                 PatchOnce(harmony, AccessTools.Method(typeof(Galaxy), nameof(Galaxy.ReadFromStream)), nameof(AfterGalaxyLoad));
                 SavePreflight.Install(harmony);
                 RetrofitAdmission.Install(harmony);
+                SelectedRetrofit.Install(harmony);
+                SelectedRetrofitYards.Install(harmony);
+                SelectedRetrofitIntegration.Install(harmony);
                 PatchBoth(harmony, AccessTools.DeclaredMethod(typeof(ShipDesignRenderer), "DoSave", [typeof(bool)]),
                     typeof(DesignerIntegration), nameof(DesignerIntegration.BeforeSave), nameof(DesignerIntegration.AfterSave));
                 DesignerIntegration.Install(harmony);

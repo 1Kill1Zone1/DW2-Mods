@@ -140,10 +140,33 @@ internal static class SeriesAutomation
     private static Exception? FinishGenerate(Exception? __exception,Generation? __state)
     {
         if(__state==null)return __exception;
-        try{if(__exception==null&&__state.Run)UpgradeAll(__state.Galaxy,__state.Empire);}
+        try
+        {
+            if(__exception==null&&__state.Run)
+            {
+                UpgradeAll(__state.Galaxy,__state.Empire);
+                ReviewUnclassified(__state);
+            }
+        }
         catch(Exception ex){Reason(__state.Galaxy,"global","Series auto-upgrade paused: "+ex.Message);}
         finally{generating=__state.Previous;Monitor.Exit(__state.Gate);}
         return __exception;
+    }
+
+    private static void ReviewUnclassified(Generation run)
+    {
+        var review=CoherentMissions.UnclassifiedReview();
+        if(review==null || run.Blocked.Count==0)return;
+        if(!ConstructionCampaigns.Get(run.Galaxy,run.Empire).TryGet(run.Empire,out var current,out _))return;
+        var candidates=new List<int>();
+        foreach(var design in run.Empire.Designs)
+        {
+            if(design==null||design.Obsolete||current.DesignClasses.ContainsKey(design.DesignId))continue;
+            var hull=design.GetShipHull(run.Galaxy);
+            if(hull!=null&&run.Blocked.Contains((hull.Role,hull.Level))&&NativePolicy(run.Empire.Policy,hull.Role,hull.Level))
+                candidates.Add(design.DesignId);
+        }
+        if(candidates.Count>0)review(run.Galaxy,candidates.ToArray());
     }
 
     internal static void UpgradeAll(Galaxy galaxy,Empire empire)
@@ -232,7 +255,9 @@ internal static class SeriesAutomation
             var facts=empire.Designs.Select(d=>RetrofitRuntime.Fact(galaxy,empire,d)).ToArray();
             if(!ConstructionCommands.TryApply(galaxy,empire,draft,current.Revision,series,[],facts,out _,out error,staged))return false;
             committed=true;source.Obsolete=true;if(source.UpgradeDesignId!=ConstructionGraph.Disabled)source.UpgradeDesignId=-2;
-            empire.ReviewLatestDesignsPerRole();empire.ReviewLatestDesignsPerShipHull();error=null;return true;
+            empire.ReviewLatestDesignsPerRole();empire.ReviewLatestDesignsPerShipHull();
+            CoherentMissions.CopyAfterUpgrade(galaxy,source,draft);
+            error=null;return true;
         }
         catch(Exception ex)
         {

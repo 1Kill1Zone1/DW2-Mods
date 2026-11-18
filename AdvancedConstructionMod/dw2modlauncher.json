@@ -11,7 +11,8 @@
     "Galaxy Waypoints@0.12.1",
     "Weapon FX Tuner@0.1.21",
     "Battle Log@0.2.0",
-    "War Chest@1.0.21"
+    "War Chest@1.0.21",
+    "Ship Logistics@1.0.44"
   ],
   "dependencies": [
     {

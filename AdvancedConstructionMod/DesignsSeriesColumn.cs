@@ -11,7 +11,7 @@ namespace AdvancedConstructionMod;
 
 internal static class DesignsSeriesColumn
 {
-    internal const string FieldName="ACM.Series";
+    internal const string FieldName="ACM.Series",SpecField="ACM.Spec";
     private static readonly ConditionalWeakTable<DesignsDialog,Layout> Dialogs=new();
     private static readonly ConditionalWeakTable<ListDrawableFieldList,Layout> Layouts=new();
     private static readonly ConditionalWeakTable<DWButtonStrip,Layout> Headers=new();
@@ -52,8 +52,8 @@ internal static class DesignsSeriesColumn
         Headers.Remove(headings);Headers.Add(headings,layout);
         layout.ArrangeHeader(headings);
         layout.ArrangeDetails();
-        if((string?)SortField.GetValue(__instance)==FieldName)
-            headings.SetButtonSort(headings.Controls.IndexOf(layout.SeriesHeader!), (bool)SortDirection.GetValue(__instance)!);
+        if(SortField.GetValue(__instance) is string key && (key==FieldName||key==SpecField))
+            headings.SetButtonSort(headings.Controls.IndexOf(key==SpecField?layout.SpecHeader!:layout.SeriesHeader!), (bool)SortDirection.GetValue(__instance)!);
     }
     private static void AfterHeaderLayout(DWButtonStrip __instance)
     {if(Headers.TryGetValue(__instance,out var layout))layout.ArrangeHeader(__instance);}
@@ -93,7 +93,7 @@ internal static class DesignsSeriesColumn
 
     private static Design[] SortedRows(DesignList designs,DesignsDialog dialog)
     {
-        if((string?)SortField.GetValue(dialog)==FieldName&&Dialogs.TryGetValue(dialog,out var layout))
+        if(SortField.GetValue(dialog) is string key && (key==FieldName||key==SpecField)&&Dialogs.TryGetValue(dialog,out var layout))
             layout.Sort(designs,(bool)SortDirection.GetValue(dialog)!);
         return designs.ToArray();
     }
@@ -110,7 +110,7 @@ internal static class DesignsSeriesColumn
                 if(code[j].Calls(AccessTools.PropertyGetter(typeof(Design),nameof(Design.Name))))name=true;
             if(!name)
             {
-                var extra=new[]{new CodeInstruction(OpCodes.Ldarg_S,(byte)17),new CodeInstruction(OpCodes.Ldarg_S,(byte)5),new CodeInstruction(OpCodes.Ldarg_S,(byte)21)};
+                var extra=new[]{new CodeInstruction(OpCodes.Ldarg_S,(byte)17),new CodeInstruction(OpCodes.Ldarg_S,(byte)5),new CodeInstruction(OpCodes.Ldarg_S,(byte)21),new CodeInstruction(OpCodes.Ldarg_0),new CodeInstruction(OpCodes.Ldarg_S,(byte)18),new CodeInstruction(OpCodes.Ldarg_S,(byte)19)};
                 extra[0].labels.AddRange(code[i].labels);code[i].labels.Clear();
                 foreach(var arg in extra)code.Insert(i++,arg);
                 code[i]=new(OpCodes.Call,AccessTools.Method(typeof(DesignsSeriesColumn),nameof(DrawOther)));continue;
@@ -137,6 +137,11 @@ internal static class DesignsSeriesColumn
         float x=position.X+S(layout.Name.Size-layout.Name.HorizontalPadding+layout.Series.HorizontalPadding);
         float width=S(layout.Series.Size-layout.Series.HorizontalPadding-4);
         DrawCell(batch,series,font,color,shadow,new(x,position.Y),width);
+        float specX=x+S(layout.Series.Size);
+        float specWidth=S(layout.Spec.Size-layout.Spec.HorizontalPadding-4);
+        string spec=layout.Specialization(design,galaxy,empire)??"\u2014";
+        DrawCell(batch,spec,font,color,shadow,new(specX,position.Y),specWidth);
+        hoverTips.Add(RowTip("Specialization",spec,new RectangleF(specX,position.Y,specWidth,font.GetTotalLineSpacing(font.Size)),S(320),font,color,shadow));
         hoverTips.Add(RowTip("Name",text,new RectangleF(position.X,position.Y,S(layout.Name.Size-layout.Name.HorizontalPadding-4),font.GetTotalLineSpacing(font.Size)),S(320),font,color,shadow));
         if(series!="—")hoverTips.Add(RowTip("Series",series,new RectangleF(x,position.Y,width,font.GetTotalLineSpacing(font.Size)),S(320),font,color,shadow));
         if(series!="—"&&layout.NativeFields.FirstOrDefault(f=>string.Equals(f.Name,"AutoDesignRole",StringComparison.OrdinalIgnoreCase)) is { } auto)
@@ -144,21 +149,31 @@ internal static class DesignsSeriesColumn
                 new RectangleF(position.X+S(layout.NativeFields.GetFieldPosition(auto.Name)),position.Y,S(auto.Size),font.GetTotalLineSpacing(font.Size)),S(440),font,color,shadow));
     }
 
+
     private static void DrawCell(SpriteBatch batch,string text,SpriteFont font,Color color,Color shadow,Vector2 position,float width)
     {
         DrawingHelper.DrawStringDropShadow(batch,Fit(text,font,width),font,color,shadow,position,
             new Vector2(Math.Max(1,width),font.GetTotalLineSpacing(font.Size)),TextAlignment.Left);
     }
-    private static void DrawOther(SpriteBatch batch,string text,SpriteFont font,Color color,Color shadow,Vector2 position,ListDrawableFieldList fields,Vector2 rowPosition,ref HoverTipList tips)
+    private static void DrawOther(SpriteBatch batch,string text,SpriteFont font,Color color,Color shadow,Vector2 position,ListDrawableFieldList fields,Vector2 rowPosition,ref HoverTipList tips,Design design,Galaxy galaxy,Empire empire)
     {
         if(!Layouts.TryGetValue(fields,out var layout)){DrawingHelper.DrawStringDropShadow(batch,text,font,color,shadow,position);return;}
         float relative=(position.X-rowPosition.X)/S(1);
         var field=layout.NativeFields.LastOrDefault(f=>layout.NativeFields.GetFieldPosition(f.Name)<=relative+.01f);
         if(field==null){DrawingHelper.DrawStringDropShadow(batch,text,font,color,shadow,position);return;}
+        if(field.Name=="Role" && text.Contains(" - ",StringComparison.Ordinal))
+            text=RoleWithoutShownSpec(text,layout.Specialization(design,galaxy,empire));
         float width=Math.Max(1,rowPosition.X+S(layout.NativeFields.GetFieldPosition(field.Name)+field.Size)-position.X-S(4));
         string fit=Fit(text,font,width);DrawingHelper.DrawStringDropShadow(batch,fit,font,color,shadow,position);
         if(fit!=text)tips.Add(RowTip(field.Name,text,new RectangleF(position.X,position.Y,width,font.GetTotalLineSpacing(font.Size)),S(400),font,color,shadow));
     }
+    internal static string RoleWithoutShownSpec(string role,string? specialization)
+    {
+        if(string.IsNullOrEmpty(specialization))return role;
+        string suffix=" - "+specialization;
+        return role.EndsWith(suffix,StringComparison.Ordinal)?role[..^suffix.Length]:role;
+    }
+
     // HoverTip's constructor leaves fonts/colors empty; these rows have no owning DWControl to generate them.
     private static HoverTip RowTip(string title,string text,RectangleF rectangle,float width,SpriteFont font,Color color,Color shadow)=>
         new(title,text,rectangle,width,Side.Right)
@@ -185,9 +200,10 @@ internal static class DesignsSeriesColumn
     {
         private readonly DesignsDialog dialog;
         internal readonly ListDrawableFieldList NativeFields=new(),HitFields=new();
-        internal readonly ListDrawableField Name,Series;
+        internal readonly ListDrawableField Name,Series,Spec;
         private DWButton? nameButton;
         private DWButton? heading;
+        internal DWButton? SpecHeader {get;private set;}
         internal DWButton? NameHeader=>nameButton;
         internal DWButton? SeriesHeader=>heading;
         private DWLabel? details;
@@ -207,9 +223,10 @@ internal static class DesignsSeriesColumn
             int index=HitFields.FindIndex(f=>string.Equals(f.Name,"Name",StringComparison.OrdinalIgnoreCase));
             if(index<0||index+1>=HitFields.Count||!string.Equals(HitFields[index+1].Name,"Role",StringComparison.OrdinalIgnoreCase))
                 throw new InvalidOperationException("Steam Designs Name/Role columns did not match the Series layout.");
-            Name=HitFields[index];Series=new(FieldName,120,true,Name.HorizontalPadding);HitFields.Insert(index+1,Series);
-            NativeFields[index].Size=Name.Size+Series.Size;
-            foreach(var pair in new[]{("Role",120f),("ShipHull",150f),("DateCreated",80f)})
+            Name=HitFields[index];Series=new(FieldName,96,true,Name.HorizontalPadding);HitFields.Insert(index+1,Series);
+            Spec=new(SpecField,80,true,Name.HorizontalPadding);HitFields.Insert(index+2,Spec);
+            NativeFields[index].Size=Name.Size+Series.Size+Spec.Size;
+            foreach(var pair in new[]{("Role",96f),("ShipHull",118f),("DateCreated",80f)})
             {HitFields.Single(f=>f.Name==pair.Item1).Size=pair.Item2;NativeFields.Single(f=>f.Name==pair.Item1).Size=pair.Item2;}
         }
 
@@ -220,6 +237,9 @@ internal static class DesignsSeriesColumn
             if(!registry.TryGet(empire,out var state,out _))return "Unavailable";
             return state.DesignClasses.TryGetValue(design.DesignId,out var id)&&state.Classes.TryGetValue(id,out var name)?name:"—";
         }
+
+        internal string? Specialization(Design design,Galaxy galaxy,Empire empire)=>Own(design,galaxy,empire)
+            ?DW2Mod.LiveChannel.Get<Func<object,int,string>>("coherent-research.design-mission-text",1)?.Invoke(galaxy,design.DesignId):null;
 
         private bool Own(Design design,Galaxy galaxy,Empire empire)=>galaxy!=null&&empire!=null&&ReferenceEquals(empire,galaxy.Empires.GetPlayer())&&
             ReferenceEquals(dialog.Galaxy,galaxy)&&ReferenceEquals(dialog.Empire,empire)&&design.EmpireId==empire.EmpireId&&
@@ -232,9 +252,11 @@ internal static class DesignsSeriesColumn
                 ConstructionCampaigns.Get(galaxy,empire).TryGet(empire,out var committed,out _))state=committed;
             string? SeriesName(Design design)=>state!=null&&Own(design,galaxy!,empire!)&&state.DesignClasses.TryGetValue(design.DesignId,out var id)&&
                 state.Classes.TryGetValue(id,out var value)?value:null;
+            bool sortSpec=(string?)SortField.GetValue(dialog)==SpecField;
+            var specNames=sortSpec?designs.ToDictionary(d=>d.DesignId,d=>Specialization(d,galaxy!,empire!)):null;
             designs.Sort(Comparer<Design>.Create((left,right)=>
             {
-                string? a=SeriesName(left),b=SeriesName(right);
+                string? a=sortSpec?specNames![left.DesignId]:SeriesName(left),b=sortSpec?specNames![right.DesignId]:SeriesName(right);
                 int order=a==null?(b==null?0:1):b==null?-1:StringComparer.OrdinalIgnoreCase.Compare(a,b)*(descending?-1:1);
                 if(order==0)order=StringComparer.OrdinalIgnoreCase.Compare(left.Name,right.Name);
                 return order!=0?order:left.DesignId.CompareTo(right.DesignId);
@@ -261,18 +283,23 @@ internal static class DesignsSeriesColumn
                 var field=HitFields.FirstOrDefault(f=>f.Name==(string)stock.ExtraClickData);
                 if(field!=null)stock.SetSizeAndPosition(new(S(field.Size),stock.Size.Y),new(origin+S(HitFields.GetFieldPosition(field.Name)),button.Position.Y));
             }
-            Vector2 position=new(origin+S(HitFields.GetFieldPosition(FieldName)),button.Position.Y);
-            if(heading==null||!ReferenceEquals(heading.Parent,headings))
+            heading=ArrangeColumn(heading,Series,"Series");
+            SpecHeader=ArrangeColumn(SpecHeader,Spec,"Spec");
+            DWButton ArrangeColumn(DWButton? header,ListDrawableField field,string title)
             {
-                heading=new DWButton{Name="ACM.SeriesHeader",Text="Series",ExtraClickData=FieldName,ClickEvent=SortSeries};
-                heading.Initialize(button.FontSizeNormal,button.FontSizeLarge,button.TilingBackground);
-                heading.ButtonColor=button.ButtonColor;heading.ButtonColorHover=button.ButtonColorHover;heading.ForeColorHover=button.ForeColorHover;
-                heading.ForeColor=button.ForeColor;heading.ShadowColor=button.ShadowColor;heading.BackColor=button.BackColor;
-                heading.TextAlignment=button.TextAlignment;heading.UseBoldFont=button.UseBoldFont;heading.Margin=button.Margin;
-                heading.ShowTexture=button.ShowTexture;heading.ShowTextureHovered=button.ShowTextureHovered;
-                heading.Visible=true;heading.PostScene=button.PostScene;headings.AddControl(heading);
+                if(header==null||!ReferenceEquals(header.Parent,headings))
+                {
+                    header=new DWButton{Name=field.Name+"Header",Text=title,ExtraClickData=field.Name,ClickEvent=SortSeries};
+                    header.Initialize(button.FontSizeNormal,button.FontSizeLarge,button.TilingBackground);
+                    header.ButtonColor=button.ButtonColor;header.ButtonColorHover=button.ButtonColorHover;header.ForeColorHover=button.ForeColorHover;
+                    header.ForeColor=button.ForeColor;header.ShadowColor=button.ShadowColor;header.BackColor=button.BackColor;
+                    header.TextAlignment=button.TextAlignment;header.UseBoldFont=button.UseBoldFont;header.Margin=button.Margin;
+                    header.ShowTexture=button.ShowTexture;header.ShowTextureHovered=button.ShowTextureHovered;
+                    header.Visible=true;header.PostScene=button.PostScene;headings.AddControl(header);
+                }
+                header.SetSizeAndPosition(new(S(field.Size),button.Size.Y),new(origin+S(HitFields.GetFieldPosition(field.Name)),button.Position.Y));
+                return header;
             }
-            heading.SetSizeAndPosition(new(S(Series.Size),button.Size.Y),position);
         }
         internal void ArrangeDetails()
         {

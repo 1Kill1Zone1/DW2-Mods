@@ -13,7 +13,7 @@ internal static partial class Checks
         var registry=ConstructionCampaigns.Get(galaxy,empire);Require(registry.TryGet(empire,out var state,out _),"automation fixture reads metadata");
         var legacy=state.Clone();legacy.Version=2;legacy.AutoUpgrade.Clear();
         string pins=System.Text.Json.JsonSerializer.Serialize(legacy.Targets);
-        Require(registry.TryRestore(empire,legacy,out _)&&SeriesAutomation.EnsureModes(galaxy,empire,out state,out _)&&state.Version==3,"schema2 campaign initializes schema3 modes once without dropping series");
+        Require(registry.TryRestore(empire,legacy,out _)&&SeriesAutomation.EnsureModes(galaxy,empire,out state,out _)&&state.Version==ConstructionSnapshot.CurrentVersion,"schema2 campaign initializes current schema modes once without dropping series");
         var representatives=empire.Designs.Where(d=>state.DesignClasses.ContainsKey(d.DesignId)).GroupBy(d=>ConstructionSnapshot.TargetKey(state.DesignClasses[d.DesignId],(int)d.GetRole(galaxy)))
             .Select(g=>g.OrderBy(d=>d.Obsolete).ThenByDescending(d=>d.StarDate).ThenByDescending(d=>d.DesignId).First()).ToArray();
         Require(System.Text.Json.JsonSerializer.Serialize(state.Targets)==pins&&representatives.All(d=>SeriesAutomation.Mode(galaxy,empire,d,state)==empire.Policy.GetShipDesignAutomationByHull(d.GetRole(galaxy),d.GetShipHull(galaxy).Level)),"existing modes inherit latest active native Auto/Manual and preserve pinned destinations");

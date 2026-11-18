@@ -109,7 +109,10 @@ internal sealed class TransferWindow:NativeWindow
             var projected=session.Projection();
             if(!projected.Preview.Accepted){Message(projected.Preview.Error,true);apply.Enabled=false;}
             else Message("Preview only. Use transfer plan returns to the editor; Save / Apply publishes every change together. No ship is sent to a yard.");
-            var counts=session.Empire.Ships.Where(s=>!s.IsDestroyed).GroupBy(s=>s.DesignId).ToDictionary(g=>g.Key,g=>g.Count());
+            // Live lists can contain empty slots, unfinished ships and stale empire membership.
+            // Count only current owned ships with an actual project; preview never repairs native lists.
+            var counts=session.Galaxy.Ships.Where(s=>s!=null&&!s.IsDestroyed&&s.EmpireId==session.Empire.EmpireId)
+                .Select(s=>s.GetDesign()).Where(d=>d!=null).GroupBy(d=>d!.DesignId).ToDictionary(g=>g.Key,g=>g.Count());
             var lines=session.ExpectedFacts.Where(f=>ids.Contains(f.DesignId)||before.State.DesignClasses.GetValueOrDefault(f.DesignId)==source||before.State.DesignClasses.GetValueOrDefault(f.DesignId)==destination)
                 .Select(f=>session.Empire.Designs.GetById(f.DesignId)).Where(d=>d!=null).Select(d=>
                 $"{d!.Name} [#{d.DesignId}] | ships: {counts.GetValueOrDefault(d.DesignId)} | "+

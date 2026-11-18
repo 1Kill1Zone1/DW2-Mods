@@ -50,7 +50,7 @@ internal static partial class Checks
         Queue(beam.DesignId,false,beam.DesignId);Queue(h2.DesignId,true,h2.DesignId);
         var installed=Path.Combine(root,"mods","3815304122");
         using var metadata=System.Text.Json.JsonDocument.Parse(File.ReadAllText(Path.Combine(installed,"mod.json")));
-        Require(metadata.RootElement.GetProperty("version").GetString()=="1.0.40","compatibility uses installed Ship Logistics1.0.40");
+        Require(metadata.RootElement.GetProperty("version").GetString() is "1.0.47" or "1.0.48","compatibility uses supported Ship Logistics 1.0.47/1.0.48");
         var module=AssemblyLoadContext.Default.LoadFromAssemblyPath(Directory.GetFiles(installed,"*.dll").Single());
         var latest=module.GetType("DW2ShipLogistics.LatestDesign",true)!;
         var host=module.GetTypes().Single(t=>t.Name=="ModHost");

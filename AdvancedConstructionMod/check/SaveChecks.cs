@@ -29,7 +29,7 @@ internal static partial class Checks
         peer.Patch(save,postfix:new HarmonyMethod(AccessTools.Method(colorSaves.GetNestedType("DWGame_SaveGame",BindingFlags.NonPublic),"Postfix")));
         var body=new Harmony("acm.check.controlled-native-save");body.Patch(save,prefix:new HarmonyMethod(typeof(Checks),nameof(ControlledSaveBody)){priority=-100});
         var getter=AccessTools.Field(typeof(MatrixStorage),"getter");var originalGetter=getter.GetValue(null);
-        var scratch=Path.Combine(AppContext.BaseDirectory,"acm-save-check-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(scratch);
+        var scratch=Path.Combine(TestOutput.Root,"acm-save-check-"+Guid.NewGuid().ToString("N"));Directory.CreateDirectory(scratch);
         string Hash(string file)=>Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(file)));
         try
         {

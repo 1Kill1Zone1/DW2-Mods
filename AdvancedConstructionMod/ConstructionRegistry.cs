@@ -38,6 +38,10 @@ internal sealed class ConstructionRegistry
         {
             if (!TryGet(empire, out _, out error)) return false;
             EmpireState state = states[empire.EmpireId];
+            var beforeMemory=state.Snapshot;
+            ConstructionSnapshot beforeStored;
+            try { beforeStored=state.Storage.Read()??new ConstructionSnapshot(); }
+            catch(Exception ex){error="Cannot verify the stored metadata before commit: "+ex.Message;return false;}
             try { state.Storage.Write(next); state.Snapshot = next; error = null; return true; }
             catch (Exception ex)
             {
@@ -46,9 +50,9 @@ internal sealed class ConstructionRegistry
                 {
                     ConstructionSnapshot? recovered = state.Storage.Read();
                     recovered ??= new ConstructionSnapshot();
-                    if (state.Snapshot == null || !Same(state.Snapshot, recovered))
+                    if (!Same(beforeStored, recovered))
                         throw new InvalidDataException("The previously published series graph could not be recovered exactly.");
-                    state.Snapshot = recovered;
+                    state.Snapshot = beforeMemory;
                     state.Error = null;
                     error = "Construction Series metadata commit failed; the previous snapshot was retained: " + ex.Message;
                     return false;
@@ -63,9 +67,22 @@ internal sealed class ConstructionRegistry
         }
     }
 
+    // Native orders and their metadata share the save gate; regular save publishes them together.
+    internal bool SetManualOrder(Empire empire,int shipId,ManualRetrofitOrder? order,out string? error)
+    {
+        lock(gate)
+        {
+            if(!TryGet(empire,out var current,out error))return false;
+            if(order==null&&!current.ManualRetrofits.ContainsKey(shipId))return true;
+            var next=current.Clone();next.Version=ConstructionSnapshot.CurrentVersion;
+            if(order==null)next.ManualRetrofits.Remove(shipId);else next.ManualRetrofits[shipId]=order;
+            next.Revision=checked(current.Revision+1);next.Validate();states[empire.EmpireId].Snapshot=next;return true;
+        }
+    }
+
     private static bool Same(ConstructionSnapshot left, ConstructionSnapshot right) => left.Version == right.Version &&
         left.Revision == right.Revision && left.Classes.OrderBy(p=>p.Key).SequenceEqual(right.Classes.OrderBy(p=>p.Key)) &&
-        left.DesignClasses.OrderBy(p=>p.Key).SequenceEqual(right.DesignClasses.OrderBy(p=>p.Key))&&left.Targets.OrderBy(p=>p.Key).SequenceEqual(right.Targets.OrderBy(p=>p.Key))&&left.AutoUpgrade.OrderBy(p=>p.Key).SequenceEqual(right.AutoUpgrade.OrderBy(p=>p.Key));
+        left.DesignClasses.OrderBy(p=>p.Key).SequenceEqual(right.DesignClasses.OrderBy(p=>p.Key))&&left.Targets.OrderBy(p=>p.Key).SequenceEqual(right.Targets.OrderBy(p=>p.Key))&&left.AutoUpgrade.OrderBy(p=>p.Key).SequenceEqual(right.AutoUpgrade.OrderBy(p=>p.Key))&&left.ManualRetrofits.OrderBy(p=>p.Key).SequenceEqual(right.ManualRetrofits.OrderBy(p=>p.Key));
 
     internal bool TryRestore(Empire empire, ConstructionSnapshot knownGood, out string? error)
     {
@@ -81,10 +98,20 @@ internal sealed class ConstructionRegistry
     {
         lock (gate)
         {
-            foreach (var state in states.Values)
+            foreach (var pair in states)
             {
+                var state=pair.Value;
                 if (state.Error != null) throw new InvalidOperationException(state.Error);
-                if (state.Loaded && state.Snapshot != null && (state.Snapshot.Classes.Count!=0||state.Snapshot.DesignClasses.Count!=0||state.Snapshot.Revision!=0))state.Storage.Write(state.Snapshot);
+                if(state.Loaded&&state.Snapshot is ConstructionSnapshot current&&current.ManualRetrofits.Count>0)
+                {
+                    var removed=current.ManualRetrofits.Keys.Where(id=>galaxy.Ships.GetById(id) is not Ship ship||ship.IsDestroyed||ship.EmpireId!=pair.Key).ToArray();
+                    if(removed.Length>0)
+                    {
+                        var next=current.Clone();foreach(int id in removed)next.ManualRetrofits.Remove(id);
+                        next.Version=ConstructionSnapshot.CurrentVersion;next.Revision=checked(current.Revision+1);next.Validate();state.Snapshot=next;
+                    }
+                }
+                if (state.Loaded && state.Snapshot != null && (state.Snapshot.Classes.Count!=0||state.Snapshot.DesignClasses.Count!=0||state.Snapshot.Revision!=0||state.Snapshot.ManualRetrofits.Count!=0))state.Storage.Write(state.Snapshot);
             }
         }
     }

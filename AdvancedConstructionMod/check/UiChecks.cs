@@ -31,7 +31,7 @@ internal static partial class Checks
         design.DesignId=uiNextId++;galaxy.Designs.Add(design);empire.Designs.Add(design);if(origin!=null)origin.Obsolete=true;
         uiPublished=design;DesignerIntegration.CloseEditor(__instance);return false;
     }
-    private static void UiChecks(Galaxy galaxy,Empire empire,Design h1,Design h2)
+    private static void UiChecks(Galaxy galaxy,Empire empire,Design h1,Design h2,bool manualMissions=false)
     {
         using var metrics=new FontMetrics();
         using var ui=new NativeUi(galaxy);
@@ -90,6 +90,92 @@ internal static partial class Checks
             var button=new DWButton();DWControl.SetupButton(ref button,"Save",new(180,28),new(10,10),"Save and Exit",
                 AccessTools.Method(typeof(ShipDesignRenderer),"SaveClick").CreateDelegate<EventHandler<DWEventArgs>>(renderer),false);
             button.Visible=true;root.AddControl(button);ClickAt(button);
+        }
+        if(manualMissions)
+        {
+            var display=new Harmony("test.acm.coherent.presentation");
+            try
+            {
+                // Rendering a preview mesh and switching the 3D scene need a graphics device.
+                // Keep the chooser, editor state, DoSave, Matrix and both mods' logic real.
+                foreach(var method in new[]{AccessTools.Method(typeof(ShipDesignRenderer),"UpdateData",[typeof(Design)]),
+                    AccessTools.Method(typeof(ShipDesignRenderer),"BindTacticsButtons",[typeof(Design),typeof(Ship)]),
+                    AccessTools.Method(typeof(ScaledRenderer),"CloseShipDesign",Type.EmptyTypes)})
+                    display.Patch(method,prefix:new HarmonyMethod(typeof(Checks),nameof(SkipNativeEditorClose)));
+                display.Patch(AccessTools.Method(typeof(ScaledRenderer),"ShowDesignsDialog",[typeof(Design)]),prefix:new HarmonyMethod(typeof(Checks),nameof(CaptureNativeDesignsDialog)));
+                var lookup=(Func<object,int,string>)DW2ModLauncher.Loader.LiveChannels.Channels["coherent-research.design-mission"];
+                foreach(string mode in new[]{"Locked","Cancel","Edit","Copy","Upgrade"})
+                {
+                    var draft=mode is "Copy" or "Upgrade"?h1.Clone(galaxy):h1;
+                    if(!ReferenceEquals(draft,h1)){draft.DesignId=Constants.DesignDesignId;draft.Name="Manual frigate "+mode;}
+                    var r=Renderer(draft,mode=="Upgrade"?h1:null,mode!="Locked");
+                    r.DesignSummary=new ScrollablePanel();r.DesignSummary.BindGalaxy(galaxy,empire);r.DesignSummary.BindData(draft);
+                    AccessTools.Field(typeof(ShipDesignRenderer),"_Renderer").SetValue(r,ui.Renderer);
+                    var ship=(Ship)RuntimeHelpers.GetUninitializedObject(typeof(Ship));GC.SuppressFinalize(ship);
+                    AccessTools.Field(typeof(ShipDesignRenderer),"_Ship").SetValue(r,ship);
+                    AccessTools.Field(typeof(ScaledRenderer),"_RendererShipDesignPostScene").SetValue(ui.Renderer,r);
+                    var panel=Panel(r);
+                    if(mode=="Cancel" && Environment.GetEnvironmentVariable("ACM_TEST_MISSION_PRESETS")=="1")
+                        TestMissionPresetEditor(r,galaxy,empire,h1,b=>ClickAt(b));
+                    else if(mode=="Cancel" && Environment.GetEnvironmentVariable("ACM_TEST_LOWER_SELECTOR")=="1")
+                    {
+                        var missionPanel=AccessTools.TypeByName("DW2CoherentResearch.DesignerMissionPanel");
+                        AccessTools.Method(missionPanel,"Build").Invoke(null,[r]);
+                        var lower=(DWPanel)UserInterfaceController.CustomControls["MissionPanel"];
+                        var group=lower.Controls.OfType<ToggleButtonGroup>().Single();
+                        Require(!Button(panel,"ACM.Specialization").Visible && lower.Controls.All(c=>c.Name!="Coherent.EditMissionPreset"),
+                            "without Edit, the lower panel still replaces the duplicate selector");
+                        ClickAt(group.Controls.OfType<DWButton>().Single(b=>b.Text=="Picket"));
+                        Require(Session(r).SelectedMission=="Picket" && Session(r).Draft.Tactics.AttackRangeNormal==TacticsStance.Aggressive,
+                            "lower Picket is staged in ACM and redesigns the working copy when Edit is off");
+                        lower.Visible=false;UserInterfaceController.RemoveCustomControl(lower);
+                        AccessTools.Method(typeof(DesignerIntegration),"Refresh").Invoke(null,[r]);
+                    }
+                    var button=Button(panel,"ACM.Specialization");
+                    Require(button.Visible&&button.Enabled==(mode!="Locked"),mode+" has the expected specialization control");
+                    var seriesButton=Button(panel,"ACM.ConstructionClass");
+                    var targetButton=Button(panel,"ACM.TargetChoice");
+                    Require(seriesButton.Position.Y+seriesButton.Size.Y<=button.Position.Y &&
+                        button.Position.X>=0 && button.Position.X+button.Size.X<=panel.Size.X &&
+                        button.Position.Y+button.Size.Y<=panel.Size.Y,mode+" specialization fits below the series row");
+                    Require(!targetButton.Visible || button.Position.Y+button.Size.Y<=targetButton.Position.Y,
+                        mode+" specialization leaves the retrofit target clickable");
+                    if(mode!="Locked")
+                    {
+                        var orig=h1.Components;
+                        var previousMission=lookup(galaxy,h1.DesignId);
+                        ClickAt(button);
+                        var menu=(SeriesChoiceWindow)NativeWindow.Active!;
+                        string wanted=mode=="Edit"?"Long":"Picket";
+                        var choice=menu.Panel.Controls.OfType<DWButton>().First(b=>b.Name.StartsWith("ACM.Choice.")&&b.Text==CoherentMissions.Choices(Session(r))![wanted]);
+                        NativeUi.Click(choice);
+                        var session=Session(r);
+                        Require(ReferenceEquals(r.DesignSummary.Design,session.Draft) && !ReferenceEquals(r.DesignSummary.Design,h1),mode+" overview follows the editable preview for subsequent component edits");
+                        Require(session.SelectedMission==wanted && ReferenceEquals(h1.Components,orig) && lookup(galaxy,h1.DesignId)==previousMission,mode+" previews specialization without changing original");
+                        if(mode=="Cancel")DesignerIntegration.CloseEditor(r);
+                        else
+                        {
+                            if(mode=="Copy")ConfirmName(r,"Separate Pickets");
+                            r.DoSave(false);
+                            if(!session.Published||lookup(galaxy,session.Draft.DesignId)!=wanted)
+                            {
+                                object?[] validationArgs=[galaxy,empire,session.Draft,false,false,null,null];
+                                var validate=AccessTools.GetDeclaredMethods(typeof(Design)).Single(m=>m.Name=="CheckDesignIsValid"&&m.GetParameters().Length==7);
+                                validate.Invoke(null,validationArgs);
+                                Console.WriteLine($"{mode}: published={session.Published} id={session.Draft.DesignId} tech={session.Draft.CheckEmpireHasResearchedAllTech(galaxy,empire,session.Draft.GetShipHull(galaxy))} error={NativeWindow.Active?.Status.Text} validity={string.Join(" | ",validationArgs.OfType<IEnumerable<string>>().SelectMany(lines=>lines))}");
+                            }
+                            Require(session.Published&&lookup(galaxy,session.Draft.DesignId)==wanted,mode+" native Save publishes selected mission");
+                            if(mode=="Edit")h1=session.Draft;
+                            var snapshot=Read(Storage(galaxy,empire.EmpireId))!;
+                            if(mode=="Copy")Require(snapshot.DesignClasses[h1.DesignId]!=snapshot.DesignClasses[session.Draft.DesignId]&&!h1.Obsolete,"independent series preserves original");
+                            if(mode=="Upgrade")Require(snapshot.DesignClasses[h1.DesignId]==snapshot.DesignClasses[session.Draft.DesignId],"new version inherits original series");
+                        }
+                    }
+                    UserInterfaceController.RemoveCustomControl(panel);
+                }
+            }
+            finally{display.UnpatchAll(display.Id);popupField.SetValue(null,priorPopup);}
+            return;
         }
         void ObsoleteSourceStatusChecks()
         {
@@ -216,6 +302,23 @@ internal static partial class Checks
         {
             Require(DesignerIntegration.SuggestedSeriesName("Xura V v5")=="Xura"&&DesignerIntegration.SuggestedSeriesName("Little Devourer v4")=="Little Devourer","series suggestion removes trailing version and Roman generation");
             Require(DesignerIntegration.SuggestedSeriesName("EX-2 Scout v4")=="EX-2 Scout"&&DesignerIntegration.SuggestedSeriesName("X Sector 213")=="X Sector 213","series suggestion preserves identifiers and ordinary numbers");
+            var optional=h2.Clone(galaxy);optional.DesignId=Constants.DesignDesignId;optional.Name="RS-3";
+            var optionalRenderer=Renderer(optional);var optionalPanel=Panel(optionalRenderer);
+            var optionalInput=(DWTextBox)optionalPanel.Controls.Single(c=>c.Name=="ACM.SeriesName");
+            int optionalClasses=Read(Storage(galaxy,empire.EmpireId))!.Classes.Count;
+            Require(optionalInput.Text=="RS-3"&&Session(optionalRenderer).ClassId==null&&!Session(optionalRenderer).Dirty,"automatic name suggestion does not assign a series");
+            Require(Button(optionalPanel,"ACM.ConfirmSeries").Enabled,"untouched optional suggestion can still be explicitly confirmed");
+            uiPublished=null;ClickSave(optionalRenderer);
+            var optionalSaved=Read(Storage(galaxy,empire.EmpireId))!;
+            Require(ReferenceEquals(uiPublished,optional)&&uiSaveClose,"Save and Exit publishes a new project without confirming its automatic suggestion");
+            Require(!optionalSaved.DesignClasses.ContainsKey(optional.DesignId)&&optionalSaved.Classes.Count==optionalClasses,"saving without a series creates no series or membership");
+            UserInterfaceController.RemoveCustomControl(optionalPanel);
+            var optionalUpgrade=optional.Clone(galaxy);optionalUpgrade.DesignId=Constants.DesignDesignId;optionalUpgrade.Name="RS-3 v2";
+            var optionalUpgradeRenderer=Renderer(optionalUpgrade,optional);var optionalUpgradePanel=Panel(optionalUpgradeRenderer);
+            uiPublished=null;ClickSave(optionalUpgradeRenderer);
+            var optionalUpgradedState=Read(Storage(galaxy,empire.EmpireId))!;
+            Require(ReferenceEquals(uiPublished,optionalUpgrade)&&!optionalUpgradedState.DesignClasses.ContainsKey(optional.DesignId)&&!optionalUpgradedState.DesignClasses.ContainsKey(optionalUpgrade.DesignId),"Upgrade of an unclassified project saves without assigning either generation");
+            UserInterfaceController.RemoveCustomControl(optionalUpgradePanel);
             var pending=h2.Clone(galaxy);pending.DesignId=Constants.DesignDesignId;pending.Name="Pending Series v1";
             var pendingRenderer=Renderer(pending);var pendingPanel=Panel(pendingRenderer);
             var pendingInput=(DWTextBox)pendingPanel.Controls.Single(c=>c.Name=="ACM.SeriesName");
@@ -371,6 +474,10 @@ internal static partial class Checks
                 UserInterfaceController.RemoveCustomControl(Panel(pinEditor));
                 var selectedUpgrade=nativeDraft.Clone(galaxy);selectedUpgrade.DesignId=Constants.DesignDesignId;selectedUpgrade.Name="Native selected target upgrade";selectedUpgrade.Obsolete=false;
                 var selectedRenderer=NativeEditor(selectedUpgrade,nativeDraft);
+                var inheritedName=Session(selectedRenderer).ClassName;
+                ConfirmName(selectedRenderer,"Rejected upgrade branch");
+                Require(((DWTextBox)Panel(selectedRenderer).Controls.Single(c=>c.Name=="ACM.SeriesName")).Text==inheritedName &&
+                    !Button(Panel(selectedRenderer),"ACM.ConfirmSeries").Enabled,"rejected Upgrade restores the inherited series in the visible input");
                 Require(Session(selectedRenderer).Projection().Preview.Next!.Targets[targetKey]==Session(selectedRenderer).Projection().TargetId,"selected target Upgrade previews advancement before native publication");
                 ClickSave(selectedRenderer);
                 Require(Read(Storage(galaxy,empire.EmpireId))!.Targets[targetKey]==selectedUpgrade.DesignId&&nativeDraft.Obsolete,"real native Save advances selected target only after new project publication");

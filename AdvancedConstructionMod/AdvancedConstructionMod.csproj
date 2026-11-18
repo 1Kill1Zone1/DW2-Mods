@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
-    <Version>0.4.0</Version>
+    <Version>0.6.1</Version>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
@@ -17,6 +17,7 @@
   </Target>
   <ItemGroup>
     <Compile Include="*.cs" />
+    <Compile Include="../Shared/LiveChannel.cs" Link="Shared/LiveChannel.cs" />
     <Reference Include="0Harmony;DistantWorlds.Types;DistantWorlds.Core;DistantWorlds.UI;DistantWorlds2;Stride.Core;Stride.Core.Mathematics;Stride.Engine;Stride.Games;Stride.Graphics;Stride.Input;Stride.Rendering"
                HintPath="$(GameRoot)/%(Identity).dll" Private="false" />
   </ItemGroup>

@@ -37,6 +37,7 @@ internal static partial class Checks
         if(modes.Length==3&&modes[0]=="--audit-auto"){AuditSave(gameRoot,Path.GetFullPath(modes[1]),Path.GetFullPath(modes[2]),true);return 0;}
         Domain();
         SeriesDomain();
+        ManualOrderDomain();
         if(modes.Length==1&&modes[0]=="--visibility")
         {
             RuntimeHelpers.RunModuleConstructor(typeof(DistantWorlds.Types.Galaxy).Module.ModuleHandle);
@@ -56,7 +57,11 @@ internal static partial class Checks
             foreach(var method in typeof(DistantWorlds.Types.ConstructionSystem).GetMethods(BindingFlags.Public|BindingFlags.NonPublic|BindingFlags.Instance|BindingFlags.Static).Where(m=>m.Name.Contains("Retrofit")||m.Name=="AddShipToConstruct"))Console.WriteLine(method+" PARAMS "+string.Join(",",method.GetParameters().Select(p=>p.Name+":"+p.ParameterType.Name)));
             return 0;
         }
+        if(modes.Length==2 && modes[0]=="--selected")Native(gameRoot,Path.GetFullPath(modes[1]),true);
         if(modes.Length==2 && modes[0]=="--native")Native(gameRoot,Path.GetFullPath(modes[1]));
+        if(modes.Length==3 && modes[0]=="--coherent")Native(gameRoot,Path.GetFullPath(modes[1]),coherent:Path.GetFullPath(modes[2]));
+        if(modes.Length==2 && modes[0]=="--inspect-missions")Native(gameRoot,Path.GetFullPath(modes[1]),inspectMissions:true);
+        if(modes.Length==3 && modes[0]=="--mixed-research")Native(gameRoot,Path.GetFullPath(modes[1]),coherent:Path.GetFullPath(modes[2]),mixedResearch:true);
         Console.WriteLine($"PASS: {assertions} Advanced Construction assertions ({(modes.Length>0?"domain + native":"domain")}).");
         return 0;
     }

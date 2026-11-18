@@ -16,10 +16,11 @@ internal abstract class NativeWindow
     private readonly float scale;
     protected float S(float value)=>value*scale;
     private bool closed;
-    protected NativeWindow(string name,string title,int width,int height)
+    protected NativeWindow(string name,string title,int width,int height,bool fitToScreen=false)
     {
         Active?.Close();Active=this;
         scale=Math.Clamp(UserInterfaceHelper.CalculateScaledValue(100)/100f,1,2);
+        if(fitToScreen)scale=Math.Min(scale,Math.Min((UserInterfaceController.ScreenWidth-24f)/width,(UserInterfaceController.ScreenHeight-24f)/height));
         Panel.Name=name;Panel.HeaderText=title;Panel.UseOverlay=true;Panel.UseRenderedBorder=true;
         Panel.SetFeatureDefaults();Panel.AddCloseButtonToHeader=false;Panel.PostScene=true;Panel.Layer=15000;Panel.Visible=true;Panel.Opacity=Panel.TargetOpacity=1;
         var background=ColorHelper.GalactopediaPanelBackColor;background.A=255;Panel.BackColor=background;

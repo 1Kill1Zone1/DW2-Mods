@@ -6,7 +6,13 @@ internal sealed class EditorSession
 {
     internal readonly Galaxy Galaxy;
     internal readonly Empire Empire;
-    internal readonly Design Draft;
+    internal Design Draft { get; private set; }
+    internal string? SelectedMission { get; private set; }
+    internal void SetMissionPreview(Design draft,string? mission)
+    {
+        Draft=draft;
+        SelectedMission=mission;
+    }
     internal readonly Design? Origin;
     internal ConstructionSnapshot Classes { get; private set; }
     internal long Revision { get; private set; }
@@ -39,6 +45,8 @@ internal sealed class EditorSession
     internal string ClassName => ClassId!=null&&Classes.Classes.TryGetValue(ClassId,out var name)?name:"—";
     internal string ClassNameFor(int designId)=>Classes.Classes.GetValueOrDefault(Classes.DesignClasses.GetValueOrDefault(designId)??"","Unassigned");
     internal bool HasSavedIdentity=>Origin==null&&ExpectedFacts.Any(f=>f.DesignId==Draft.DesignId);
+    internal bool InheritsSeries => Origin!=null && committed.DesignClasses.ContainsKey(Origin.DesignId);
+    internal const string UpgradeSeriesHint = "Upgrade keeps this series. To start another series, use Copy as New.";
     internal int Role=>(int)Draft.GetRole(Galaxy);
     internal string TargetChoice=>ClassId==null?"Choose a series":draftTarget?"This project after Save":
         Classes.Targets.TryGetValue(ConstructionSnapshot.TargetKey(ClassId,Role),out int id)?id==ConstructionGraph.Disabled?"No target":Empire.Designs.GetById(id)?.Name??("Missing #"+id):"Automatic latest";
@@ -85,7 +93,7 @@ internal sealed class EditorSession
     {
         if(id!=null&&!Classes.Classes.ContainsKey(id)){error="This series no longer exists.";return false;}
         if(Origin!=null&&Classes.DesignClasses.TryGetValue(Origin.DesignId,out var inherited)&&inherited!=id)
-        {error="Upgrade inherits its source series. Change the source design's series explicitly before creating another branch.";return false;}
+        {error=UpgradeSeriesHint;return false;}
         if(id==ClassId){error=null;return true;}
         if(HasSavedIdentity&&ClassId!=null&&id!=null)
         {
@@ -123,7 +131,7 @@ internal sealed class EditorSession
         }
         else
         {
-            if(Origin!=null&&Classes.DesignClasses.ContainsKey(Origin.DesignId)){error="An Upgrade keeps its source series.";return false;}
+            if(InheritsSeries){error=UpgradeSeriesHint;return false;}
             string id=ConstructionGraph.CreateClass(Classes,name);createdClasses.Add(id);
             if(!SelectClass(id,out error)){Classes.Classes.Remove(id);createdClasses.Remove(id);return false;}
         }
