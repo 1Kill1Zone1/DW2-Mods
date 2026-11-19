@@ -28,6 +28,12 @@
       "loadAfter": true
     },
     {
+      "mod": "Settings Keeper",
+      "workshopId": 3824847512,
+      "required": false,
+      "loadAfter": true
+    },
+    {
       "mod": "Freight Dispatch",
       "required": false,
       "loadAfter": true
