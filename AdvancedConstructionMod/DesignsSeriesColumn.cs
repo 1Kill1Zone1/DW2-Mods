@@ -335,7 +335,7 @@ internal static class DesignsSeriesColumn
         {
             if(details==null)return;
             var selected=dialog.DesignsList.SelectedItems.OfType<Design>().FirstOrDefault();
-            details.Text=selected==null||dialog.Galaxy==null||dialog.Empire==null?"Select a project to see its full name.":selected.Name+"\nSeries: "+Text(selected,dialog.Galaxy,dialog.Empire)+" | "+selected.GetShipHullName(dialog.Galaxy);
+            details.Text=selected==null||dialog.Galaxy==null||dialog.Empire==null?"Select a project to see its full name.":selected.Name+"\nSeries: "+Text(selected,dialog.Galaxy,dialog.Empire);
         }
     }
 }
