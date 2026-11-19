@@ -22,8 +22,71 @@ internal static class DesignsSeriesColumn
     private static readonly MethodInfo DrawText=AccessTools.Method(typeof(DrawingHelper),nameof(DrawingHelper.DrawStringDropShadow),
         [typeof(SpriteBatch),typeof(string),typeof(SpriteFont),typeof(Color),typeof(Color),typeof(Vector2)]);
 
+    // Settings Keeper hosts the Designs list's columns when it is loaded: ACM registers its Series column there (the host places it after Name, sizes it, draws it, sorts by it, gives it the drag
+    // and the cut-text tip) and only keeps its own detail strip under the list. Without Settings Keeper ACM lays the columns out itself, as before.
+    internal const string HostChannel="settings-keeper.designs-column";
+    private static bool hosted;
+    private static readonly ConditionalWeakTable<DesignsDialog,StripOnly> Strips=new();
+
+    // runs before the Designs window is built, which is when the host takes its registrations
+    internal static void RegisterWithHost()
+    {
+        RegisterPerHull();
+        if(hosted)return;
+        var add=DW2Mod.LiveChannel.Get<Action<string,string,string,string,bool,float,Func<object,object,object,string>>>(HostChannel,1);
+        if(add==null)return;
+        hosted=true;
+        add("advanced-construction",FieldName,"Series","Role",true,160,(galaxy,empire,design)=>
+            galaxy is Galaxy g&&empire is Empire e&&design is Design d?SeriesText(d,g,e):null);
+    }
+
+    // The game's "Latest ... Per Hull" filters list one design per hull, so two series on one hull would hide each other. With Settings Keeper loaded, ACM tells it which designs to add:
+    // the newest design of each series on each hull.
+    private static bool perHullRegistered;
+    private static void RegisterPerHull()
+    {
+        if(perHullRegistered)return;
+        var add=DW2Mod.LiveChannel.Get<Action<string,Func<object,object,bool,IEnumerable<int>>>>("settings-keeper.designs-per-hull",1);
+        if(add==null)return;
+        perHullRegistered=true;
+        add("advanced-construction",NewestPerSeries);
+    }
+
+    private static IEnumerable<int> NewestPerSeries(object galaxyObject,object empireObject,bool mustBeBuildable)
+    {
+        var ids=new List<int>();
+        if(galaxyObject is not Galaxy galaxy||empireObject is not Empire empire||!ReferenceEquals(empire,galaxy.Empires.GetPlayer())||
+            !ConstructionCampaigns.Get(galaxy,empire).TryGet(empire,out var state,out _))return ids;
+        var newest=new Dictionary<(short,string),Design>();
+        foreach(Design design in empire.Designs)
+        {
+            if(design==null||!state.DesignClasses.TryGetValue(design.DesignId,out var series))continue;
+            if(mustBeBuildable)
+            {
+                if(design.Obsolete)continue;
+                var hull=design.GetShipHull(galaxy);
+                if(hull==null||!design.CheckEmpireHasResearchedAllTech(galaxy,empire,hull))continue;
+            }
+            if(!newest.TryGetValue((design.HullId,series),out var best)||design.StarDate>best.StarDate)newest[(design.HullId,series)]=design;
+        }
+        ids.AddRange(newest.Values.Select(d=>d.DesignId));
+        return ids;
+    }
+
+    // the series a design is in, for the player's own designs
+    internal static string SeriesText(Design design,Galaxy galaxy,Empire empire)
+    {
+        bool own=galaxy!=null&&empire!=null&&ReferenceEquals(empire,galaxy.Empires.GetPlayer())&&design.EmpireId==empire.EmpireId&&
+            ReferenceEquals(empire.Designs.GetById(design.DesignId),design)&&ReferenceEquals(galaxy.Designs.GetById(design.DesignId),design);
+        if(!own)return "\u2014";
+        var registry=ConstructionCampaigns.Get(galaxy!,empire!);
+        if(!registry.TryGet(empire!,out var state,out _))return "Unavailable";
+        return state.DesignClasses.TryGetValue(design.DesignId,out var id)&&state.Classes.TryGetValue(id,out var name)?name:"\u2014";
+    }
+
     internal static void Install(Harmony harmony)
     {
+        harmony.Patch(AccessTools.DeclaredMethod(typeof(DesignsDialog),"Initialize"),prefix:new HarmonyMethod(typeof(DesignsSeriesColumn),nameof(RegisterWithHost)));
         DesignsColumnResize.Install(harmony);
         foreach(string method in new[]{"Initialize","BindDesignsList"})
             harmony.Patch(AccessTools.DeclaredMethod(typeof(DesignsDialog),method),
@@ -44,6 +107,12 @@ internal static class DesignsSeriesColumn
         var list=__instance.DesignsList;var headings=__instance.ColumnHeadings;
         if(list==null||headings==null)return;
         if(__instance.Empire?.IsPlayer==true&&__instance.Galaxy is { } ownerGalaxy)SeriesAutomation.EnsureModes(ownerGalaxy,__instance.Empire,out _,out _);
+        if(hosted)
+        {
+            if(!Strips.TryGetValue(__instance,out var strip)){strip=new StripOnly(__instance);Strips.Add(__instance,strip);}
+            strip.Arrange();
+            return;
+        }
         if(!Dialogs.TryGetValue(__instance,out var layout))
         {
             layout=new Layout(__instance);Dialogs.Add(__instance,layout);
@@ -60,7 +129,38 @@ internal static class DesignsSeriesColumn
     private static void AfterHeaderLayout(DWButtonStrip __instance)
     {if(Headers.TryGetValue(__instance,out var layout))layout.ArrangeHeader(__instance);}
     private static void AfterSelection(DesignsDialog __instance)
-    {if(Dialogs.TryGetValue(__instance,out var layout))layout.RefreshDetails();}
+    {if(Dialogs.TryGetValue(__instance,out var layout))layout.RefreshDetails();else if(Strips.TryGetValue(__instance,out var strip))strip.Refresh();}
+
+    // The detail strip under the list when Settings Keeper hosts the columns: the list is a little shorter, and the selected design's full name and series show below it.
+    private sealed class StripOnly(DesignsDialog dialog)
+    {
+        private DWLabel? details;
+        private ScrollableList? detailsList;
+        private float fullListHeight,lastListHeight;
+        internal void Arrange()
+        {
+            var list=dialog.DesignsList;float height=S(30);
+            if(!ReferenceEquals(detailsList,list)||Math.Abs(list.Size.Y-lastListHeight)>.1f){detailsList=list;fullListHeight=list.Size.Y;}
+            lastListHeight=Math.Max(S(50),fullListHeight-height);
+            list.SetSizeAndPosition(new(list.Size.X,lastListHeight),list.Position);
+            var position=list.Position+new Vector2(0,lastListHeight+S(4));
+            if(details==null||!ReferenceEquals(details.Parent,dialog))
+            {
+                details=DWLabel.Generate("Select a project to see its full name.","ACM.DesignDetails",position,new(list.Size.X,height-S(4)),0,ColorHelper.ForeColor,false,FontSize.Normal,TextAlignment.Left,dialog,string.Empty,Side.Right);
+                details.Visible=true;
+            }
+            details.SetSizeAndPosition(new(list.Size.X,height-S(4)),position);Refresh();
+        }
+        internal void Refresh()
+        {
+            if(details==null)return;
+            // the game puts the list back at its own place every frame it draws, so the strip follows the list as it is now
+            var host=dialog.DesignsList;
+            details.SetSizeAndPosition(new(host.Size.X,S(30)-S(4)),host.Position+new Vector2(0,host.Size.Y+S(4)));
+            var selected=dialog.DesignsList.SelectedItems.OfType<Design>().FirstOrDefault();
+            details.Text=selected==null||dialog.Galaxy==null||dialog.Empire==null?"Select a project to see its full name.":selected.Name+"        Series: "+SeriesText(selected,dialog.Galaxy,dialog.Empire);
+        }
+    }
 
     internal static void RefreshCommittedSeries(Galaxy galaxy,Empire empire)
     {
@@ -248,10 +348,7 @@ internal static class DesignsSeriesColumn
 
         internal string Text(Design design,Galaxy galaxy,Empire empire)
         {
-            if(!Own(design,galaxy,empire))return "—";
-            var registry=ConstructionCampaigns.Get(galaxy,empire);
-            if(!registry.TryGet(empire,out var state,out _))return "Unavailable";
-            return state.DesignClasses.TryGetValue(design.DesignId,out var id)&&state.Classes.TryGetValue(id,out var name)?name:"—";
+            return Own(design,galaxy,empire)?SeriesText(design,galaxy,empire):"—";
         }
 
         internal string? Specialization(Design design,Galaxy galaxy,Empire empire)=>Own(design,galaxy,empire)
@@ -319,7 +416,7 @@ internal static class DesignsSeriesColumn
         }
         internal void ArrangeDetails()
         {
-            var list=dialog.DesignsList;float height=S(48);
+            var list=dialog.DesignsList;float height=S(30);
             if(!ReferenceEquals(detailsList,list)||Math.Abs(list.Size.Y-lastListHeight)>.1f){detailsList=list;fullListHeight=list.Size.Y;}
             lastListHeight=Math.Max(S(50),fullListHeight-height);
             list.SetSizeAndPosition(new(list.Size.X,lastListHeight),list.Position);
@@ -334,8 +431,11 @@ internal static class DesignsSeriesColumn
         internal void RefreshDetails()
         {
             if(details==null)return;
+            // the game puts the list back at its own place every frame it draws, so the strip follows the list as it is now
+            var host=dialog.DesignsList;
+            details.SetSizeAndPosition(new(host.Size.X,S(30)-S(4)),host.Position+new Vector2(0,host.Size.Y+S(4)));
             var selected=dialog.DesignsList.SelectedItems.OfType<Design>().FirstOrDefault();
-            details.Text=selected==null||dialog.Galaxy==null||dialog.Empire==null?"Select a project to see its full name.":selected.Name+"\nSeries: "+Text(selected,dialog.Galaxy,dialog.Empire);
+            details.Text=selected==null||dialog.Galaxy==null||dialog.Empire==null?"Select a project to see its full name.":selected.Name+"        Series: "+Text(selected,dialog.Galaxy,dialog.Empire);
         }
     }
 }
