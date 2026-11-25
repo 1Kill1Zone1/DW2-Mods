@@ -1,0 +1,140 @@
+{
+  "Camera": [
+    {
+      "key": "CameraPreset",
+      "type": "enum",
+      "label": "Camera preset",
+      "default": "Custom",
+      "options": [
+        "Custom",
+        "Galaxy 3x / System 2x"
+      ],
+      "description": "Apply Galaxy 3x / System 2x to change only the two zoom speeds. Other choices stay as set. In the launcher the preset is applied once at game start. In Esc > Settings it is applied when you press Apply."
+    },
+    {
+      "key": "SystemZoomSpeed",
+      "type": "enum",
+      "label": "System zoom speed",
+      "description": "Distance per wheel notch or Page Up / Page Down step in a system or local view. If one notch goes past the ship or planet you wanted to inspect, lower this first. Game follows the game's Zoom Speed option. 1x is factory speed, 2x to 4x scale it.",
+      "options": [
+        "Game",
+        "1x",
+        "2x",
+        "3x",
+        "4x"
+      ],
+      "default": "Game"
+    },
+    {
+      "key": "GalaxyZoomSpeed",
+      "type": "enum",
+      "label": "Galaxy zoom speed",
+      "description": "Distance per wheel notch or Page Up / Page Down step on the galaxy map. Raise it to cross more of the map per step. Game follows the game's Zoom Speed option. 1x is factory speed. This setting is independent of system zoom.",
+      "options": [
+        "Game",
+        "1x",
+        "2x",
+        "3x",
+        "4x"
+      ],
+      "default": "Game"
+    },
+    {
+      "key": "ShowMeView",
+      "type": "enum",
+      "label": "Show Me view",
+      "description": "View opened by Show Me on a message. Keep current zoom centers at your current scale. System Map opens a known system and centers deep-space ships on the galaxy map. Galaxy Map shows the wider area. Game default uses the normal game focus.",
+      "options": [
+        "Keep current zoom",
+        "System Map",
+        "Galaxy Map",
+        "Game default"
+      ],
+      "default": "System Map"
+    },
+    {
+      "key": "ShipFocusView",
+      "type": "enum",
+      "label": "Ship focus view",
+      "description": "View used when focusing a ship or fleet leader from a list or a selected hotkey. Keep current zoom preserves your scale. System Map opens the system or uses the galaxy map in deep space. Galaxy Map gives a wider view. Game default uses the normal close-up.",
+      "options": [
+        "Keep current zoom",
+        "System Map",
+        "Galaxy Map",
+        "Game default"
+      ],
+      "default": "Keep current zoom"
+    },
+    {
+      "key": "WheelAcceleration",
+      "type": "enum",
+      "label": "Wheel acceleration",
+      "description": "Total speed ceiling for a burst of wheel notches in the same direction. Off uses base speed. A 2x ceiling has no effect on a 3x or 4x base. A pause, reversal or map change resets the burst.",
+      "options": [
+        "Off",
+        "2x",
+        "3x",
+        "4x"
+      ],
+      "default": "Off"
+    },
+    {
+      "key": "WheelAccelerationRamp",
+      "type": "enum",
+      "label": "Wheel acceleration ramp",
+      "description": "How quickly repeated notches reach the acceleration ceiling. Gentle builds slowly, Standard at a medium rate, Fast most quickly. Only affects maps whose base speed is below the enabled ceiling.",
+      "options": [
+        "Gentle",
+        "Standard",
+        "Fast"
+      ],
+      "default": "Standard"
+    },
+    {
+      "key": "WheelZoomSmoothing",
+      "type": "enum",
+      "label": "Wheel zoom smoothing",
+      "description": "Off moves immediately. Short eases each step over about 120 ms. Soft uses the chosen duration. Inertia adds extra travel after fast scrolling where the view allows it. Lower the map speed if one notch covers too much distance.",
+      "options": [
+        "Off",
+        "Short",
+        "Soft",
+        "Inertia"
+      ],
+      "default": "Off"
+    },
+    {
+      "key": "WheelSmoothingDuration",
+      "type": "enum",
+      "label": "Wheel smoothing duration",
+      "description": "Time to settle after wheel input in Soft and Inertia modes. 220 ms feels more immediate. 320 and 450 ms spread the movement over longer. Short uses a fixed 120 ms.",
+      "options": [
+        "220 ms",
+        "320 ms",
+        "450 ms"
+      ],
+      "default": "220 ms"
+    },
+    {
+      "key": "WheelInertiaCoast",
+      "type": "enum",
+      "label": "Wheel inertia coast",
+      "description": "Extra travel after a quick series in Inertia mode, as a percentage of the last step. 0% removes the tail. One isolated notch adds no tail. Inward zoom on the system map also omits the extra travel.",
+      "options": [
+        "0%",
+        "25%",
+        "50%",
+        "75%"
+      ],
+      "default": "25%"
+    }
+  ],
+  "_previews": {
+    "WheelZoomSmoothing": {
+      "Off": "wheel-zoom-off.png",
+      "Short": "wheel-zoom-short.png",
+      "Soft": "wheel-zoom-soft.png",
+      "Inertia": "wheel-zoom-inertia.png"
+    }
+  }
+}

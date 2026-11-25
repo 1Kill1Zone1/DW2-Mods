@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><Version>0.1.1</Version><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable></PropertyGroup>
+  <ItemGroup><Compile Remove="check/**/*.cs"/><Reference Include="0Harmony;DistantWorlds.Types" HintPath="$(GameRoot)/%(Identity).dll" Private="false"/></ItemGroup>
+</Project>

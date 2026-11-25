@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Stride;0Harmony;DistantWorlds.Core;DistantWorlds.Types;DistantWorlds.UI;Stride.Graphics;DistantWorlds2;Stride.Core;Stride.Core.IO;Stride.Core.Serialization;Stride.Engine;Stride.Games;Stride.Core.Mathematics" HintPath="$(GameRoot)/%(Identity).dll" Private="false" />
+    <Content Include="$(GameRoot)/data/Hints.txt" Link="data/Hints.txt" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

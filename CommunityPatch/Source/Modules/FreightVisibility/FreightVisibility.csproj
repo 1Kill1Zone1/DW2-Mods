@@ -1,0 +1,4 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><TargetFramework>net8.0</TargetFramework><Version>0.1.1</Version><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><EnableDefaultCompileItems>false</EnableDefaultCompileItems></PropertyGroup>
+  <ItemGroup><Compile Include="src/*.cs"/><Reference Include="0Harmony;DistantWorlds.Core;DistantWorlds.Types;DistantWorlds.UI;Stride.Core;Stride.Core.Mathematics" HintPath="$(GameRoot)/%(Identity).dll" Private="false"/></ItemGroup>
+</Project>

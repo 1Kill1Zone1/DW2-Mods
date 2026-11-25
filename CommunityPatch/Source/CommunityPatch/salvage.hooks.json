@@ -1,0 +1,62 @@
+[
+  {
+    "target": "DistantWorlds.Types.Empire:DoTasks(System.DateTime,DistantWorlds.Types.Galaxy)",
+    "kind": "postfix",
+    "effect": "observes",
+    "why": "CommunityPatch CommunityPatch.SalvageOrders:Review(DistantWorlds.Types.Empire,DistantWorlds.Types.Galaxy,System.DateTime)"
+  },
+  {
+    "target": "DistantWorlds.Types.ConstructionSystem:PrepareShipComponentsForRetrofit(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Ship&,DistantWorlds.Types.Design,System.Boolean)",
+    "kind": "prefix",
+    "effect": "observes",
+    "why": "CommunityPatch CommunityPatch.SalvageOrders:BeforeStrip(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Ship,DistantWorlds.Types.Design,CommunityPatch.SalvageOrders+Strip&)"
+  },
+  {
+    "target": "DistantWorlds.Types.ConstructionSystem:PrepareShipComponentsForRetrofit(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Ship&,DistantWorlds.Types.Design,System.Boolean)",
+    "kind": "postfix",
+    "effect": "observes",
+    "why": "CommunityPatch CommunityPatch.SalvageOrders:AfterStrip(DistantWorlds.Types.Ship,DistantWorlds.Types.Design,CommunityPatch.SalvageOrders+Strip)"
+  },
+  {
+    "target": "DistantWorlds.Types.Ship:CheckAutoAssignMission(DistantWorlds.Types.ShipMissionType,System.Int64,System.DateTime,DistantWorlds.Types.Design,DistantWorlds.Types.ShipHull,DistantWorlds.Types.ShipHullValues,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,DistantWorlds.Types.BattleTactics)",
+    "kind": "prefix",
+    "effect": "skips-original",
+    "why": "CommunityPatch CommunityPatch.SalvageOrders:KeepWorking(DistantWorlds.Types.Ship,DistantWorlds.Types.Empire,System.Boolean&)"
+  },
+  {
+    "target": "DistantWorlds.Types.ResearchProjectList:SelectRandomVisibleProject(DistantWorlds.Types.Galaxy,System.Random,DistantWorlds.Types.ComponentCategory,System.Boolean)",
+    "kind": "postfix",
+    "effect": "observes",
+    "why": "CommunityPatch CommunityPatch.SalvageOrders:SelectedProject(DistantWorlds.Types.ResearchProjectList,DistantWorlds.Types.ResearchProject)"
+  },
+  {
+    "target": "DistantWorlds.Types.ResearchProjectList:SelectRandomVisibleProject(System.Random,System.Boolean)",
+    "kind": "postfix",
+    "effect": "observes",
+    "why": "CommunityPatch CommunityPatch.SalvageOrders:SelectedProject(DistantWorlds.Types.ResearchProjectList,DistantWorlds.Types.ResearchProject)"
+  },
+  {
+    "target": "DistantWorlds.Types.ConstructionSystem:DoTasks(System.Single,System.DateTime,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,System.Boolean)",
+    "kind": "prefix",
+    "effect": "observes",
+    "why": "CommunityPatch CommunityPatch.SalvageDismantle:EnterYard(DistantWorlds.Types.ConstructionSystem,DistantWorlds.Types.ConstructionSystem&)"
+  },
+  {
+    "target": "DistantWorlds.Types.ConstructionSystem:DoTasks(System.Single,System.DateTime,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,System.Boolean)",
+    "kind": "finalizer",
+    "effect": "observes",
+    "why": "CommunityPatch CommunityPatch.SalvageDismantle:LeaveYard(DistantWorlds.Types.ConstructionSystem)"
+  },
+  {
+    "target": "DistantWorlds.Types.ConstructionSystem:BuildShip(DistantWorlds.Types.Ship,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Boolean,DistantWorlds.Types.CargoList,DistantWorlds.Types.CargoList,System.Single,System.Single,System.Single,System.Single,System.Boolean&)",
+    "kind": "prefix",
+    "effect": "observes",
+    "why": "CommunityPatch CommunityPatch.SalvageDismantle:Repair(DistantWorlds.Types.Ship,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire)"
+  },
+  {
+    "target": "DistantWorlds.UI.UserInterfaceController:SetActionButtonsFromTasks(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Object,DistantWorlds.Types.GameTask[],DistantWorlds.Types.GameTaskList[],DistantWorlds.UI.DWButton[])",
+    "kind": "postfix",
+    "effect": "observes",
+    "why": "CommunityPatch CommunityPatch.SalvagePanel:Bind(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Object,DistantWorlds.Types.GameTask[],DistantWorlds.Types.GameTaskList[],DistantWorlds.UI.DWButton[])"
+  }
+]

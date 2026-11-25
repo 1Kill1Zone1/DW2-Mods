@@ -1,0 +1,68 @@
+{
+  "injection": {
+    "dll": "CommunityPatch.dll",
+    "entryPoint": "CommunityPatch.Entry.InitWithOptions"
+  },
+  "minLauncherVersion": "1.0.44",
+  "dependencies": [
+    {
+      "mod": "Freighter Logistics",
+      "uid": "257adff2-40aa-4f3c-b933-7848dc440844",
+      "workshopId": 3813818446,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Diplomatic Corps",
+      "uid": "66d85e25-649a-4e47-8c2b-a5fbd09745cf",
+      "workshopId": 3829180757,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Positronic Matrix",
+      "uid": "370f8d29-137b-4e55-a32a-f2c29b633a38",
+      "workshopId": 3833406787,
+      "required": true,
+      "loadAfter": true
+    },
+    {
+      "mod": "Troop Logistics",
+      "uid": "4468052e-630d-4ff2-92b4-2af233d18cfe",
+      "workshopId": 3821203666,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "War Chest",
+      "uid": "e4740235-3e41-436a-9b4e-b404d19b3d6f",
+      "workshopId": 3824731625,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Coherent R\u0026D",
+      "uid": "08c1df95-d7a7-4c31-b18a-d137af33a94d",
+      "workshopId": 3819331138,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Ship Logistics",
+      "uid": "63b6fe73-433e-4238-9412-79cdfd91c017",
+      "workshopId": 3815304122,
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Galaxy Waypoints",
+      "required": false,
+      "loadAfter": true
+    },
+    {
+      "mod": "Freight Dispatch",
+      "required": false,
+      "loadBefore": true
+    }
+  ]
+}

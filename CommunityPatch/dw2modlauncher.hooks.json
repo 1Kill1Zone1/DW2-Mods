@@ -1,0 +1,1012 @@
+{
+  "schema": 1,
+  "modVersion": "1.0.20",
+  "gameVersion": "1.3.8.8",
+  "hooks": [
+    {
+      "target": "DW2CoherentResearch.ResearchBlock:Work(DistantWorlds.Types.Empire)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:EnterCoherentWork(DistantWorlds.Types.Empire,RacialResearchUnlock.Entry+Scope&)"
+    },
+    {
+      "target": "DW2CoherentResearch.ResearchBlock:Work(DistantWorlds.Types.Empire)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:ExitResearchGate(RacialResearchUnlock.Entry+Scope)"
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:CalculateAnnualRevenue(DistantWorlds.Types.Orb,DistantWorlds.Types.Empire,System.Single,System.Boolean,System.Single&,System.Single&,System.Single&,System.Single)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "ColonySupportRules ColonySupportRules.Entry:ReplaceSupport(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:CalculateColonySupportCosts(DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,System.Int64,DistantWorlds.Types.Race,System.Single,System.Single)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "ColonySupportRules ColonySupportRules.Entry:ReplaceSupport(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:ChangeEmpire(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Boolean,System.Boolean,DistantWorlds.Types.CharacterHandlingBehavior,System.Single,System.Single,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:BeforeConquest(DistantWorlds.Types.Colony,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Boolean,System.Boolean,System.Boolean,InheritedShipRetirement.Entry+Acquisition&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:ChangeEmpire(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Boolean,System.Boolean,DistantWorlds.Types.CharacterHandlingBehavior,System.Single,System.Single,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:AfterConquest(DistantWorlds.Types.Galaxy,InheritedShipRetirement.Entry+Acquisition)"
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:ChangeEmpire(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Boolean,System.Boolean,DistantWorlds.Types.CharacterHandlingBehavior,System.Single,System.Single,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CancellationRefunds CancellationRefunds.Entry:OwnershipInstructions(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:FacilityCompleted(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,DistantWorlds.Types.PlanetaryFacility,System.Int64,System.Single&)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:FacilityCompleted(DistantWorlds.Types.Galaxy,DistantWorlds.Types.PlanetaryFacility)"
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:ProcessFacilities(System.Single,System.Int64,DistantWorlds.Types.Orb,DistantWorlds.Types.Empire,DistantWorlds.Types.Galaxy)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:FacilitiesProgress(DistantWorlds.Types.Orb)"
+    },
+    {
+      "target": "DistantWorlds.Types.Colony:ProcessTroops(System.Single,DistantWorlds.Types.Empire)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:TroopsProgress(DistantWorlds.Types.Colony,DistantWorlds.Types.Empire)"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:BuildShip(DistantWorlds.Types.Ship,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Boolean,DistantWorlds.Types.CargoList,DistantWorlds.Types.CargoList,System.Single,System.Single,System.Single,System.Single,System.Boolean&)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:ObserveShipConstruction(DistantWorlds.Types.Ship,System.Boolean)"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:DoTasks(System.Single,System.DateTime,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:BeforeTasks(DistantWorlds.Types.ConstructionSystem,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,RetirementResearchReport.Entry+TaskScope&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:DoTasks(System.Single,System.DateTime,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,System.Boolean)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:ObserveConstruction(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:DoTasks(System.Single,System.DateTime,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,System.Boolean)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:AfterTasks(DistantWorlds.Types.Galaxy,RetirementResearchReport.Entry+TaskScope)"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:PerformTechProgress(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Ship,DistantWorlds.Types.ComponentCategory,System.Single,DistantWorlds.Types.ConstructionType,System.Single,System.Single)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:ObserveProgress(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds.Types.DiplomacyTalkSystem:BindData(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.EmpireRelation,System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]])",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Dialogue:Bound(DistantWorlds.Types.DiplomacyTalkSystem)"
+    },
+    {
+      "target": "DistantWorlds.Types.DiplomacyTalkSystem:ProcessOption(DistantWorlds.Types.DiplomacyTalkOption,DistantWorlds.Types.DiplomacyTalkOptionType&,DistantWorlds.Types.DiplomacyTalkOptionList&,DistantWorlds.Types.CharacterAnimationMood&)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "ResourceIntelligence ResourceIntelligence.Dialogue:Process(DistantWorlds.Types.DiplomacyTalkSystem,DistantWorlds.Types.DiplomacyTalkOption,DistantWorlds.Types.DiplomacyTalkOptionType&,DistantWorlds.Types.DiplomacyTalkOptionList&,DistantWorlds.Types.CharacterAnimationMood&,System.String&)"
+    },
+    {
+      "target": "DistantWorlds.Types.DiplomacyTalkSystem:ResolveOptions(DistantWorlds.Types.Galaxy,DistantWorlds.Types.DiplomacyTalkOption,DistantWorlds.Types.DiplomacyTalkOptionType)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Dialogue:AddEntry(DistantWorlds.Types.DiplomacyTalkSystem,DistantWorlds.Types.DiplomacyTalkOptionType,DistantWorlds.Types.DiplomacyTalkOptionList)"
+    },
+    {
+      "target": "DistantWorlds.Types.DrawingHelper:RenderMarkupText(Stride.Graphics.SpriteBatch,Stride.Core.Mathematics.RectangleF,System.String,System.Single,System.Single,Stride.Graphics.SpriteFont,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,Stride.Core.Serialization.Contents.ContentManager,System.Boolean)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "RetirementResearchReport RetirementResearchReport.ReportDialog:RenderRows(Stride.Graphics.SpriteBatch,Stride.Core.Mathematics.RectangleF,System.String,System.Single,System.Single,Stride.Graphics.SpriteFont,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,Stride.Core.Serialization.Contents.ContentManager,Stride.Core.Mathematics.Vector2&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Economy:Expense(System.Single,DistantWorlds.Types.ExpenseType,System.Int64,System.Int16)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginExpense(System.Int32&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Economy:Expense(System.Single,DistantWorlds.Types.ExpenseType,System.Int64,System.Int16)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CancellationRefunds CancellationRefunds.Entry:ExpenseInstructions(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds.Types.Economy:Expense(System.Single,DistantWorlds.Types.ExpenseType,System.Int64,System.Int16)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndExpense(System.Exception,System.Int32)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:BuildFacility(DistantWorlds.Types.Orb,DistantWorlds.Types.PlanetaryFacilityDefinition,System.Int64,System.Single,System.Byte,System.Boolean,System.String)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginBuild(DistantWorlds.Types.Empire,System.Single,System.Boolean,CancellationRefunds.Entry+PaymentFrame&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:BuildFacility(DistantWorlds.Types.Orb,DistantWorlds.Types.PlanetaryFacilityDefinition,System.Int64,System.Single,System.Byte,System.Boolean,System.String)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndBuild(DistantWorlds.Types.PlanetaryFacility,CancellationRefunds.Entry+PaymentFrame)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:BuildFacility(DistantWorlds.Types.Orb,DistantWorlds.Types.PlanetaryFacilityDefinition,System.Int64,System.Single,System.Byte,System.Boolean,System.String)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndPayment(System.Exception,CancellationRefunds.Entry+PaymentFrame)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:CheckRecruitDefenseTroop(DistantWorlds.Types.Orb,DistantWorlds.Types.Colony,System.Single,System.Single,System.Single,System.Int64,System.Single,System.Single&,System.Single&)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginRecruit(DistantWorlds.Types.Empire,CancellationRefunds.Entry+RecruitFrame&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:CheckRecruitDefenseTroop(DistantWorlds.Types.Orb,DistantWorlds.Types.Colony,System.Single,System.Single,System.Single,System.Int64,System.Single,System.Single&,System.Single&)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndRecruit(System.Exception,CancellationRefunds.Entry+RecruitFrame)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:DoResearchBreakthrough(DistantWorlds.Types.ResearchProject,DistantWorlds.Types.Ship,DistantWorlds.Types.ConstructionType,System.Boolean,System.Boolean,System.String,System.String,System.String,DistantWorlds.Types.EmpireMessageViewMode,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:AfterBreakthrough(DistantWorlds.Types.Empire,DistantWorlds.Types.ResearchProject)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteGameTask(DistantWorlds.Types.GameTask,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:TaskEntered(DistantWorlds.Types.Empire,DistantWorlds.Types.GameTask,System.Boolean,System.Boolean)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskBuildShips(DistantWorlds.Types.StellarObject,DistantWorlds.Types.DesignList,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],Stride.Core.Mathematics.Vector3,DistantWorlds.Types.Orb,System.Boolean,DistantWorlds.Types.StellarObject)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CancellationRefunds CancellationRefunds.Entry:ShipPaymentInstructions(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskCancelShipConstruction(DistantWorlds.Types.Ship,DistantWorlds.Types.StellarObject)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginYardCancel(DistantWorlds.Types.Empire,DistantWorlds.Types.Ship,DistantWorlds.Types.StellarObject,CancellationRefunds.Ledger+Bound&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskCancelShipConstruction(DistantWorlds.Types.Ship,DistantWorlds.Types.StellarObject)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndShipCancel(DistantWorlds.Types.Empire,DistantWorlds.Types.Ship,CancellationRefunds.Ledger+Bound)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskDisbandTroop(DistantWorlds.Types.TroopList)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginTroopCancel(DistantWorlds.Types.Empire,DistantWorlds.Types.TroopList,CancellationRefunds.Entry+TroopCancel&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskDisbandTroop(DistantWorlds.Types.TroopList)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndTroopCancel(System.Exception,CancellationRefunds.Entry+TroopCancel)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskRecruitTroops(DistantWorlds.Types.Orb,DistantWorlds.Types.TroopDefinition,DistantWorlds.Types.Troop)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginRecruit(DistantWorlds.Types.Empire,CancellationRefunds.Entry+RecruitFrame&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskRecruitTroops(DistantWorlds.Types.Orb,DistantWorlds.Types.TroopDefinition,DistantWorlds.Types.Troop)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndRecruit(System.Exception,CancellationRefunds.Entry+RecruitFrame)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapPlanetaryFacility(DistantWorlds.Types.Orb,System.Int32)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginFacilityCancel(DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,System.Int32,CancellationRefunds.Entry+FacilityCancel&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapPlanetaryFacility(DistantWorlds.Types.Orb,System.Int32)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CancellationRefunds CancellationRefunds.Entry:FacilityCancelInstructions(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapPlanetaryFacility(DistantWorlds.Types.Orb,System.Int32)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndFacilityCancel(System.Exception,CancellationRefunds.Entry+FacilityCancel)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapShip(DistantWorlds.Types.Ship)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginScuttle(DistantWorlds.Types.Empire,DistantWorlds.Types.Ship,CancellationRefunds.Ledger+Bound&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapShip(DistantWorlds.Types.Ship)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndShipCancel(DistantWorlds.Types.Empire,DistantWorlds.Types.Ship,CancellationRefunds.Ledger+Bound)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:ExecuteTaskScrapShips(DistantWorlds.Types.ShipList)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CancellationRefunds CancellationRefunds.Entry:GroupScuttleInstructions(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:PayPrice(DistantWorlds.Types.Price,DistantWorlds.Types.ExpenseType)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginPay(DistantWorlds.Types.Empire,DistantWorlds.Types.Price,DistantWorlds.Types.ExpenseType,CancellationRefunds.Entry+PaymentFrame&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:PayPrice(DistantWorlds.Types.Price,DistantWorlds.Types.ExpenseType)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndPay(CancellationRefunds.Entry+PaymentFrame)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:PayPrice(DistantWorlds.Types.Price,DistantWorlds.Types.ExpenseType)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndPayment(System.Exception,CancellationRefunds.Entry+PaymentFrame)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:PerformResearch(System.Single,System.Int64)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:EnterEmpireResearch(DistantWorlds.Types.Empire,RacialResearchUnlock.Entry+Scope&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:PerformResearch(System.Single,System.Int64)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:ExitResearchGate(RacialResearchUnlock.Entry+Scope)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:RecruitAttackTroopsByType(DistantWorlds.Types.TroopType,System.Single&,System.Int32,System.Single,System.Int32,System.Int64,System.Single,System.Single&,System.Single&)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginRecruit(DistantWorlds.Types.Empire,CancellationRefunds.Entry+RecruitFrame&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:RecruitAttackTroopsByType(DistantWorlds.Types.TroopType,System.Single&,System.Int32,System.Single,System.Int32,System.Int64,System.Single,System.Single&,System.Single&)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndRecruit(System.Exception,CancellationRefunds.Entry+RecruitFrame)"
+    },
+    {
+      "target": "DistantWorlds.Types.EmpireMessage:RenderListHover(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,Stride.Graphics.SpriteBatch,Stride.Core.Mathematics.RectangleF,System.Int64,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,System.Single,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,System.Single,DistantWorlds.Types.EmpireMessage)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "RetirementResearchReport RetirementResearchReport.ReportDialog:HideReceipt(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds.Types.ExplorationMap:MergeMap(System.Byte[])",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Enter(System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ExplorationMap:MergeMap(System.Byte[])",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Leave(System.Boolean,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.Types.ExplorationMap:MergeSystemMap(DistantWorlds.Types.StarSystem,System.Byte[])",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Enter(System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ExplorationMap:MergeSystemMap(DistantWorlds.Types.StarSystem,System.Byte[])",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Leave(System.Boolean,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.Types.ExplorationMap:SetExplorationLevel(DistantWorlds.Types.Orb,System.Byte,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Enter(System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ExplorationMap:SetExplorationLevel(DistantWorlds.Types.Orb,System.Byte,System.Boolean)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Leave(System.Boolean,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.Types.ExplorationMap:SetMapDirectly(System.Byte[])",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Enter(System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ExplorationMap:SetMapDirectly(System.Byte[])",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Leave(System.Boolean,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:AssignMissionCore(DistantWorlds.Types.ShipMissionType,DistantWorlds.Types.StellarObject,DistantWorlds.Types.Fleet,System.Int32,System.Int32,System.Boolean,System.Int32,System.Boolean,DistantWorlds.Types.StellarObject,System.Boolean,DistantWorlds.Types.AttackTarget)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:FleetOrdered(DistantWorlds.Types.Fleet,DistantWorlds.Types.ShipMissionType,System.Boolean,System.Boolean)"
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:CheckAssignNextQueuedMission(DistantWorlds.Types.Empire)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "DeepSpaceStability DeepSpaceStability.RefuelPoint:Advance(DistantWorlds.Types.Fleet,System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:DoTasks(System.DateTime,DistantWorlds.Types.Location)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:Reviewed(DistantWorlds.Types.Fleet,System.DateTime)"
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:GatherShips(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:AllowGather(DistantWorlds.Types.Fleet)"
+    },
+    {
+      "target": "DistantWorlds.Types.Fleet:SignalFuelTankersForRefuelling(DistantWorlds.Types.Empire,DistantWorlds.Types.ResourceQuantityList,System.Single,System.Boolean)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:Dispatch(DistantWorlds.Types.Fleet,DistantWorlds.Types.Empire,System.Boolean,System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:ReadFromStream(System.IO.BinaryReader,DistantWorlds.Types.GameGalaxyData&,System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]&)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:Loaded(DistantWorlds.Types.Galaxy)"
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:ReadFromStream(System.IO.BinaryReader,DistantWorlds.Types.GameGalaxyData&,System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]&)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:AfterLoad(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Galaxy,System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]])"
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:WriteToStream(System.IO.BinaryWriter,DistantWorlds.Types.GameGalaxyData)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Enter(System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:WriteToStream(System.IO.BinaryWriter,DistantWorlds.Types.GameGalaxyData)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:Save(DistantWorlds.Types.Galaxy)"
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:WriteToStream(System.IO.BinaryWriter,DistantWorlds.Types.GameGalaxyData)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:BeforeSave(DistantWorlds.Types.Galaxy,RetirementResearchReport.Entry+Campaign&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:WriteToStream(System.IO.BinaryWriter,DistantWorlds.Types.GameGalaxyData)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Leave(System.Boolean,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:WriteToStream(System.IO.BinaryWriter,DistantWorlds.Types.GameGalaxyData)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:AfterSave(RetirementResearchReport.Entry+Campaign)"
+    },
+    {
+      "target": "DistantWorlds.Types.HoverTip:CheckExtraDataMatches(System.Object,System.Object,System.Object,System.Object)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "ColonyEventDisplayFix ColonyEventDisplayFix.Entry:RejectChangedColonyEventGroup(System.Object,System.Object,System.Object,System.Object,System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Location:UpdateLocationPosition(Stride.Core.Mathematics.Point)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "DeepSpaceStability DeepSpaceStability.Entry:Rebase(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchProject:CanRaceResearch(DistantWorlds.Types.Race)",
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:ProjectRacePostfix(DistantWorlds.Types.ResearchProject,DistantWorlds.Types.Race,System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:CanEmpireResearch(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.ResearchProject,System.Boolean,System.Boolean,System.Boolean,System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]&)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:EnterResearchGate(System.Object[],RacialResearchUnlock.Entry+Scope&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:CanEmpireResearch(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.ResearchProject,System.Boolean,System.Boolean,System.Boolean,System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]&)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:ExitResearchGate(RacialResearchUnlock.Entry+Scope)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:CanEmpireResearchFailFast(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.ResearchProject,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:EnterResearchGate(System.Object[],RacialResearchUnlock.Entry+Scope&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:CanEmpireResearchFailFast(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.ResearchProject,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:ExitResearchGate(RacialResearchUnlock.Entry+Scope)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:CanEmpireResearchFailFast(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.ResearchProject,System.Boolean,System.Boolean,System.Boolean,System.Boolean,DistantWorlds.Types.ResearchProjectList)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:EnterResearchGate(System.Object[],RacialResearchUnlock.Entry+Scope&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:CanEmpireResearchFailFast(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.ResearchProject,System.Boolean,System.Boolean,System.Boolean,System.Boolean,DistantWorlds.Types.ResearchProjectList)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:ExitResearchGate(RacialResearchUnlock.Entry+Scope)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:CanRaceResearch(DistantWorlds.Types.Race,DistantWorlds.Types.ResearchProject)",
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:SystemRacePostfix(DistantWorlds.Types.Race,DistantWorlds.Types.ResearchProject,System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:CanRaceResearch(System.Byte,DistantWorlds.Types.ResearchProject)",
+      "kind": "prefix",
+      "effect": "changes-args",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:StaticRacePrefix(System.Byte&,DistantWorlds.Types.ResearchProject)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:CanRaceResearch(System.Byte,DistantWorlds.Types.ResearchProject,DistantWorlds.Types.Galaxy,System.Boolean,System.Collections.Generic.List`1[[System.String, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]&)",
+      "kind": "prefix",
+      "effect": "changes-args",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:StaticRacePrefix(System.Byte&,DistantWorlds.Types.ResearchProject)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchSystem:Update(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Race,DistantWorlds.Types.EmpirePolicy,System.Boolean,System.Boolean,System.Boolean&)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:ResearchUpdated(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire)"
+    },
+    {
+      "target": "DistantWorlds.Types.Resource:DistantWorlds.Types.IListDrawable.DrawItem(Stride.Rendering.RenderDrawContext,Stride.Graphics.SpriteBatch,DistantWorlds.Types.DrawDetailType,Stride.Core.Mathematics.Point,Stride.Core.Mathematics.Vector2,System.Single,System.Single,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,System.Single,System.Single,System.Single,DistantWorlds.Types.ListDrawableFieldList,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Object,DistantWorlds.Types.HoverTipList&,DistantWorlds.Types.GameTask&,DistantWorlds.Types.GameTask&,System.Boolean&,System.Boolean&,System.Boolean)",
+      "kind": "prefix",
+      "effect": "changes-args",
+      "why": "FreightVisibility FreightVisibility.Entry:Before(DistantWorlds.Types.HoverTipList&,System.Int32&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Resource:DistantWorlds.Types.IListDrawable.DrawItem(Stride.Rendering.RenderDrawContext,Stride.Graphics.SpriteBatch,DistantWorlds.Types.DrawDetailType,Stride.Core.Mathematics.Point,Stride.Core.Mathematics.Vector2,System.Single,System.Single,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,System.Single,System.Single,System.Single,DistantWorlds.Types.ListDrawableFieldList,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Object,DistantWorlds.Types.HoverTipList&,DistantWorlds.Types.GameTask&,DistantWorlds.Types.GameTask&,System.Boolean&,System.Boolean&,System.Boolean)",
+      "kind": "postfix",
+      "effect": "changes-args",
+      "why": "FreightVisibility FreightVisibility.Entry:After(DistantWorlds.Types.Resource,DistantWorlds.Types.DrawDetailType,DistantWorlds.Types.Empire,DistantWorlds.Types.HoverTipList&,System.Int32)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionCore(DistantWorlds.Types.ShipMission,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.CargoReservationList,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:ManualOverride(DistantWorlds.Types.Ship,System.Boolean)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionCore(DistantWorlds.Types.ShipMission,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.CargoReservationList,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:CurrentWorkerOrder(DistantWorlds.Types.Ship)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionCore(DistantWorlds.Types.ShipMission,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.CargoReservationList,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:ShipOrdered(DistantWorlds.Types.Ship,DistantWorlds.Types.ShipMission,System.Boolean,System.Boolean)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionCore(DistantWorlds.Types.ShipMission,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.CargoReservationList,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:AfterMission(DistantWorlds.Types.Ship)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionTransferFuel(DistantWorlds.Types.Ship,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],System.Boolean)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:KeepTransfer(DistantWorlds.Types.Ship,DistantWorlds.Types.Ship,System.Boolean,DeepSpaceStability.Rally+Claim&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:AssignMissionTransferFuel(DistantWorlds.Types.Ship,System.Collections.Generic.List`1[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],System.Boolean)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:TransferFinished(System.Exception,DeepSpaceStability.Rally+Claim)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:ChangeEmpire(System.Int16,System.Boolean,DistantWorlds.Types.CharacterHandlingBehavior,System.Single,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginShipOwnerChange(DistantWorlds.Types.Ship,System.Int16&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:ChangeEmpire(System.Int16,System.Boolean,DistantWorlds.Types.CharacterHandlingBehavior,System.Single,System.Boolean)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndShipOwnerChange(DistantWorlds.Types.Ship,System.Int16,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:CheckAutoAssignMission(DistantWorlds.Types.ShipMissionType,System.Int64,System.DateTime,DistantWorlds.Types.Design,DistantWorlds.Types.ShipHull,DistantWorlds.Types.ShipHullValues,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,DistantWorlds.Types.BattleTactics)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:AllowAutomaticAssignment(DistantWorlds.Types.Ship,System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:CheckRepairRefuelRetrofit(DistantWorlds.Types.Empire,System.DateTime,System.Boolean,System.Boolean&,System.Boolean)",
+      "kind": "prefix",
+      "effect": "changes-args",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:AllowPendingRetirementRepairRefuel(DistantWorlds.Types.Ship,System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:CommandBuild(System.DateTime,System.Single,System.Int64,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,DistantWorlds.Types.ShipMission,DistantWorlds.Types.StellarObject,Stride.Core.Mathematics.Point)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CancellationRefunds CancellationRefunds.Entry:ShipPaymentInstructions(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:CompleteTeardown(DistantWorlds.Types.Empire)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:AfterShipTeardown(DistantWorlds.Types.Ship)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:CompleteTeardown(DistantWorlds.Types.Empire,DistantWorlds.Types.StellarObject)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:AfterShipTeardown(DistantWorlds.Types.Ship)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:CompleteTeardown(DistantWorlds.Types.Empire,System.Boolean,DistantWorlds.Types.StellarObject)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:AfterShipTeardown(DistantWorlds.Types.Ship)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:DoTasks(System.DateTime,DistantWorlds.Types.Galaxy,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:BeforeShipTasks(DistantWorlds.Types.Ship,DistantWorlds.Types.Galaxy,System.DateTime)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:DoTasks(System.DateTime,DistantWorlds.Types.Galaxy,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.Entry:BeforeShipTasks(DistantWorlds.Types.Galaxy)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:QueueMission(DistantWorlds.Types.ShipMission,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "InheritedShipRetirement InheritedShipRetirement.Entry:ManualOverride(DistantWorlds.Types.Ship,System.Boolean)"
+    },
+    {
+      "target": "DistantWorlds.Types.ShipList:CheckAnyShipsWithActiveHyperDenyForPosition(Stride.Core.Mathematics.Vector3,DistantWorlds.Types.Location,System.Int16,System.Single)",
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "HyperDenyMove HyperDenyMove.Entry:CheckMovingShips(DistantWorlds.Types.ShipList,Stride.Core.Mathematics.Vector3,DistantWorlds.Types.Location,System.Int16,System.Single,System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ShipList:GetByLowFuelLevel(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Single,System.Int16,DistantWorlds.Types.Ship,System.Boolean,DistantWorlds.Types.ShipList,System.Boolean,System.Boolean,DistantWorlds.Types.Ship,System.Boolean)",
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:NearestFirst(DistantWorlds.Types.Ship,DistantWorlds.Types.ShipList&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ShipList:GetByLowFuelLevel(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Single,System.Int16,DistantWorlds.Types.Ship,System.Boolean,DistantWorlds.Types.ShipList,System.Boolean,System.Boolean,DistantWorlds.Types.Ship,System.Boolean,System.Boolean&)",
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:NearestFirst(DistantWorlds.Types.Ship,DistantWorlds.Types.ShipList&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ShipMission:ResolveValidMissions(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Fleet,DistantWorlds.Types.StellarObject,DistantWorlds.Types.Fleet,System.Int32,System.Int32,System.Boolean)",
+      "kind": "postfix",
+      "effect": "changes-result",
+      "why": "DeepSpaceStability DeepSpaceStability.RefuelPoint:AddCommand(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Fleet,DistantWorlds.Types.StellarObject,DistantWorlds.Types.Fleet,System.Int32,System.Int32,System.Boolean,DistantWorlds.Types.GameTaskList&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Troop:ChangeEmpire(DistantWorlds.Types.Galaxy,System.Int16)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CancellationRefunds CancellationRefunds.Entry:OwnershipInstructions(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds.Types.Troop:CompleteTeardown(DistantWorlds.Types.Galaxy)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:BeginTeardown(DistantWorlds.Types.Troop,DistantWorlds.Types.Galaxy,CancellationRefunds.Ledger+Bound&)"
+    },
+    {
+      "target": "DistantWorlds.Types.Troop:CompleteTeardown(DistantWorlds.Types.Galaxy)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:EndTeardown(DistantWorlds.Types.Troop,DistantWorlds.Types.Galaxy,CancellationRefunds.Ledger+Bound)"
+    },
+    {
+      "target": "DistantWorlds.Types.TroopDefinition:GenerateTroop(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Colony,DistantWorlds.Types.Ship,DistantWorlds.Types.TroopDefinition,System.Boolean,System.Boolean,System.Boolean,System.Boolean,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CancellationRefunds CancellationRefunds.Entry:Generated(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Colony,System.Boolean,System.Boolean,DistantWorlds.Types.Troop)"
+    },
+    {
+      "target": "DistantWorlds.Types.UserInterfaceHelper:DrawColonyEventSummary(Stride.Graphics.SpriteBatch,Stride.Core.Mathematics.RectangleF,System.Single,System.Single,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.ColonyEventList,DistantWorlds.Types.OrbList,Stride.Graphics.Texture,System.Boolean)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "ColonyEventDisplayFix ColonyEventDisplayFix.BreedingWorldSummary:Transpile(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.Emit.ILGenerator)"
+    },
+    {
+      "target": "DistantWorlds.Types.VisibilityMap:MergeSystemExplorationLevels(DistantWorlds.Types.Galaxy,DistantWorlds.Types.VisibilityMap)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Enter(System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.VisibilityMap:MergeSystemExplorationLevels(DistantWorlds.Types.Galaxy,DistantWorlds.Types.VisibilityMap)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Leave(System.Boolean,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.Types.VisibilityMap:SetSystemExplored(System.Int32)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Enter(System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.VisibilityMap:SetSystemExplored(System.Int32)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Leave(System.Boolean,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.Types.VisibilityMap:SetSystemUnexplored(System.Int32)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Enter(System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.VisibilityMap:SetSystemUnexplored(System.Int32)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Leave(System.Boolean,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.Types.VisibilityMap:UpdateKnownData(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Single,System.Byte)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Enter(System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.VisibilityMap:UpdateKnownData(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Single,System.Byte)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "ResourceIntelligence ResourceIntelligence.Entry:Leave(System.Boolean,System.Exception)"
+    },
+    {
+      "target": "DistantWorlds.UI.DiplomacyConversation:TalkOptionClicked(System.Object,DistantWorlds.Types.DWEventArgs)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "ResourceIntelligence ResourceIntelligence.Dialogue:AfterClick(DistantWorlds.UI.DiplomacyConversation)"
+    },
+    {
+      "target": "DistantWorlds.UI.EmpireMessageDialog:BindData(DistantWorlds.Types.EmpireMessage,System.Boolean,System.Single,DistantWorlds.UI.EmpireMessageDialog+ClickedEventHandler,DistantWorlds.UI.DWButtonData,DistantWorlds.UI.DWButtonData,DistantWorlds.UI.DWButtonData,DistantWorlds.UI.DWButtonData,DistantWorlds.UI.DWButtonData,DistantWorlds.Types.Side,DistantWorlds.UI.EmpireMessageDialog+MessageHoveredEventHandler,DistantWorlds.UI.EmpireMessageDialog+MessageHoveredEventHandler)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "RetirementResearchReport RetirementResearchReport.ReportDialog:BindText(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds.UI.ResearchTree:Render(Stride.Rendering.RenderDrawContext,Stride.Graphics.SpriteBatch,Stride.Core.Mathematics.Point,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:EnterResearchRender(DistantWorlds.UI.ResearchTree,System.Collections.Generic.HashSet`1[[System.Collections.Generic.List`1[[System.Byte, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]&)"
+    },
+    {
+      "target": "DistantWorlds.UI.ResearchTree:Render(Stride.Rendering.RenderDrawContext,Stride.Graphics.SpriteBatch,Stride.Core.Mathematics.Point,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:DrawFrontierLabels(DistantWorlds.UI.ResearchTree,Stride.Graphics.SpriteBatch)"
+    },
+    {
+      "target": "DistantWorlds.UI.ResearchTree:Render(Stride.Rendering.RenderDrawContext,Stride.Graphics.SpriteBatch,Stride.Core.Mathematics.Point,System.Boolean)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:FilterResearchRenderRaceLists(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds.UI.ResearchTree:Render(Stride.Rendering.RenderDrawContext,Stride.Graphics.SpriteBatch,Stride.Core.Mathematics.Point,System.Boolean)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:ExitResearchRender(System.Exception,System.Collections.Generic.HashSet`1[[System.Collections.Generic.List`1[[System.Byte, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]], System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]])"
+    },
+    {
+      "target": "DistantWorlds.UI.ResearchTree:Update(System.Single,Stride.Core.Mathematics.Point)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "RacialResearchUnlock RacialResearchUnlock.Entry:ResearchTreeUpdated(DistantWorlds.UI.ResearchTree)"
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:ExecuteAction(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.UI.DWButton,DistantWorlds.Types.GameTask,DistantWorlds.Types.GameTaskList,DistantWorlds.UI.ActionButtonData,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:UiEntered(System.Int32&)"
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:ExecuteAction(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.UI.DWButton,DistantWorlds.Types.GameTask,DistantWorlds.Types.GameTaskList,DistantWorlds.UI.ActionButtonData,System.Boolean)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "DeepSpaceStability DeepSpaceStability.Rally:UiExited(System.Exception,System.Int32)"
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:Update(System.Single,Stride.Core.Mathematics.Point,System.Int32,System.Int32)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.SavePreflight:UpdateUi()"
+    },
+    {
+      "target": "DistantWorlds2.DWGame:SaveGame(System.String)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "RetirementResearchReport RetirementResearchReport.SavePreflight:BeforeGameSave(DistantWorlds2.DWGame,RetirementResearchReport.SavePreflight+Scope&)"
+    },
+    {
+      "target": "DistantWorlds2.DWGame:SaveGame(System.String)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "RetirementResearchReport RetirementResearchReport.SavePreflight:BeforeFileOpen(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds2.DWGame:SaveGame(System.String)",
+      "kind": "finalizer",
+      "effect": "changes-result",
+      "why": "RetirementResearchReport RetirementResearchReport.SavePreflight:FinishGameSave(System.Exception,RetirementResearchReport.SavePreflight+Scope)"
+    },
+    {
+      "target": "DistantWorlds.Types.Resource:DistantWorlds.Types.IListDrawable.DrawItem(Stride.Rendering.RenderDrawContext,Stride.Graphics.SpriteBatch,DistantWorlds.Types.DrawDetailType,Stride.Core.Mathematics.Point,Stride.Core.Mathematics.Vector2,System.Single,System.Single,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,System.Single,System.Single,System.Single,DistantWorlds.Types.ListDrawableFieldList,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Object,DistantWorlds.Types.HoverTipList&,DistantWorlds.Types.GameTask&,DistantWorlds.Types.GameTask&,System.Boolean&,System.Boolean&,System.Boolean)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CommunityPatch CommunityPatch.ResourceSourcePointers:ReplaceKnownCount(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]])"
+    },
+    {
+      "target": "DistantWorlds2.DWRendererBase:DrawMapCallouts(Stride.Graphics.SpriteBatch,DistantWorlds.Types.CameraInfo,System.Int32,System.Int32,System.Single)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.ResourceSourcePointers:DrawPointers(Stride.Graphics.SpriteBatch,DistantWorlds.Types.CameraInfo,System.Int32,System.Int32,System.Single,DistantWorlds.Types.Empire,Stride.Core.Mathematics.Vector3)"
+    },
+    {
+      "target": "DistantWorlds2.ScaledRenderer:EmpireMessageShowClick(System.Object,DistantWorlds.Types.DWEventArgs)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CommunityPatch CommunityPatch.MapCamera:ScopeFocusZoom(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds2.ScaledRenderer:ZoomToItem(DistantWorlds.Types.StellarObject,Stride.Games.GameTime,System.Single,System.Single)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "CommunityPatch CommunityPatch.MapCamera:BeforeZoomToItem(DistantWorlds2.ScaledRenderer,DistantWorlds.Types.StellarObject,System.Single,System.Single,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Int64,System.Boolean)"
+    },
+    {
+      "target": "DistantWorlds2.ScaledRenderer:DoScrollWheel(System.Single,Stride.Core.Mathematics.Point,System.Single,System.Single)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CommunityPatch CommunityPatch.MapCamera:ApplyViewSpeed(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds2.ScaledRenderer:ZoomIn(System.Single)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CommunityPatch CommunityPatch.MapCamera:ApplyViewSpeed(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds2.ScaledRenderer:ZoomOut(System.Single)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CommunityPatch CommunityPatch.MapCamera:ApplyViewSpeed(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds2.InputSystem:Update(Stride.Input.InputManager,DistantWorlds.Types.GameSettings,Stride.Games.GameTime,System.Single,System.Single)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.MapCamera:AfterInputUpdate(Stride.Input.InputManager,DistantWorlds.Types.GameSettings,Stride.Games.GameTime,System.Single,DistantWorlds2.ScaledRenderer)"
+    },
+    {
+      "target": "DistantWorlds2.ScaledRenderer:MoveViewToItemFromEmpireSectionList(System.Object,DistantWorlds.Types.DWEventArgs)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CommunityPatch CommunityPatch.MapCamera:ScopeFocusZoom(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds2.ScaledRenderer:DoMouseMove(Stride.Core.Mathematics.Vector2)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.MapCamera:BeforePan(DistantWorlds2.ScaledRenderer,DistantWorlds.Types.CameraInfo&)"
+    },
+    {
+      "target": "DistantWorlds2.ScaledRenderer:DoMouseMove(Stride.Core.Mathematics.Vector2)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.MapCamera:AfterPan(DistantWorlds2.ScaledRenderer,DistantWorlds.Types.CameraInfo)"
+    },
+    {
+      "target": "DistantWorlds2.ScaledRenderer:SelectHotkeyItem(System.Int32)",
+      "kind": "transpiler",
+      "effect": "rewrites",
+      "why": "CommunityPatch CommunityPatch.MapCamera:ScopeFocusZoom(System.Collections.Generic.IEnumerable`1[[HarmonyLib.CodeInstruction, 0Harmony, Version=2.3.3.0, Culture=neutral, PublicKeyToken=null]],System.Reflection.MethodBase)"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:FulfillOrders(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,System.Int64,System.Single,DistantWorlds.Types.OrderList,System.Single,System.Single,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.EmpireList,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.OrbList,System.UInt64)",
+      "kind": "prefix",
+      "priority": 0,
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.ResourceFreightPolicy:BeginPass"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:FulfillOrders(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,System.Int64,System.Single,DistantWorlds.Types.OrderList,System.Single,System.Single,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.EmpireList,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.OrbList,System.UInt64)",
+      "kind": "transpiler",
+      "priority": 400,
+      "effect": "rewrites",
+      "why": "CommunityPatch CommunityPatch.ResourceFreightPolicy:UsePriorityOrder"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:FulfillOrders(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,System.Int64,System.Single,DistantWorlds.Types.OrderList,System.Single,System.Single,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.EmpireList,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.OrbList,System.UInt64)",
+      "kind": "finalizer",
+      "priority": 400,
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.ResourceFreightPolicy:EndPass"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:FulfillSingleOrder(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Order,DistantWorlds.Types.OrderList,DistantWorlds.Types.Orb,System.Int64,System.Single&,System.Collections.Generic.Dictionary`2[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[DistantWorlds.Types.IndexFactorList, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.Single,System.Single,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.EmpireList,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.OrbList,System.Collections.Generic.List`1[[DistantWorlds.Types.Order, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]]&,System.UInt64)",
+      "kind": "prefix",
+      "priority": 400,
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.ResourceFreightPolicy:BeforeOrder"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:FulfillSingleOrder(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Order,DistantWorlds.Types.OrderList,DistantWorlds.Types.Orb,System.Int64,System.Single&,System.Collections.Generic.Dictionary`2[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e],[DistantWorlds.Types.IndexFactorList, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.Single,System.Single,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.EmpireList,System.Collections.Generic.List`1[[System.Int16, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]],DistantWorlds.Types.OrbList,System.Collections.Generic.List`1[[DistantWorlds.Types.Order, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]]&,System.UInt64)",
+      "kind": "finalizer",
+      "priority": 400,
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.ResourceFreightPolicy:AfterOrder"
+    },
+    {
+      "target": "DistantWorlds.Types.Galaxy:InitiateContract(System.Int64,DistantWorlds.Types.Empire,DistantWorlds.Types.Orb,DistantWorlds.Types.Order,DistantWorlds.Types.StellarObject,DistantWorlds.Types.Ship,System.Single,System.Single,System.Single,System.Single&,System.Single,System.Boolean)",
+      "kind": "prefix",
+      "priority": 400,
+      "effect": "skips-original",
+      "why": "CommunityPatch CommunityPatch.ResourceFreightPolicy:BeforeContract"
+    },
+    {
+      "target": "DistantWorlds.Types.Resource:DistantWorlds.Types.IListDrawable.DrawItem(Stride.Rendering.RenderDrawContext,Stride.Graphics.SpriteBatch,DistantWorlds.Types.DrawDetailType,Stride.Core.Mathematics.Point,Stride.Core.Mathematics.Vector2,System.Single,System.Single,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Graphics.SpriteFont,Stride.Core.Mathematics.Color,Stride.Core.Mathematics.Color,System.Single,System.Single,System.Single,DistantWorlds.Types.ListDrawableFieldList,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Object,DistantWorlds.Types.HoverTipList&,DistantWorlds.Types.GameTask&,DistantWorlds.Types.GameTask&,System.Boolean&,System.Boolean&,System.Boolean)",
+      "kind": "postfix",
+      "priority": 400,
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.StockpileDetails:LabelStockpile"
+    },
+    {
+      "target": "DistantWorlds.UI.ScrollableList:DoMouseUp(Stride.Core.Mathematics.Point,System.Boolean,DistantWorlds.Types.Empire,System.Boolean,System.Boolean,System.Single)",
+      "kind": "postfix",
+      "priority": 400,
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.StockpileDetails:OpenStockpile"
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:Update(System.Single,Stride.Core.Mathematics.Point,System.Int32,System.Int32)",
+      "kind": "postfix",
+      "priority": 400,
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.StockpileDetails:CheckDialog"
+    },
+    {
+      "target": "DistantWorlds.UI.CollapsiblePanelList:GenerateGameSettingPanels(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.GameSettings,Stride.Input.InputManager,System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]])",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.CameraSettingsDialog:AddPanel"
+    },
+    {
+      "target": "DistantWorlds.UI.GameSettingsDialog:BindData(System.String,Stride.Input.InputManager,DistantWorlds.Types.GameSettings,System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]])",
+      "kind": "prefix",
+      "effect": "changes-args",
+      "why": "CommunityPatch CommunityPatch.CameraSettingsDialog:BeforeBind"
+    },
+    {
+      "target": "DistantWorlds.UI.GameSettingsDialog:BindData(System.String,Stride.Input.InputManager,DistantWorlds.Types.GameSettings,System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]],System.EventHandler`1[[DistantWorlds.Types.DWEventArgs, DistantWorlds.Types, Version=1.3.8.8, Culture=neutral, PublicKeyToken=null]])",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.CameraSettingsDialog:AfterBind"
+    },
+    {
+      "target": "DistantWorlds.Types.Empire:DoTasks(System.DateTime,DistantWorlds.Types.Galaxy)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.SalvageOrders:Review(DistantWorlds.Types.Empire,DistantWorlds.Types.Galaxy,System.DateTime)"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:PrepareShipComponentsForRetrofit(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Ship&,DistantWorlds.Types.Design,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.SalvageOrders:BeforeStrip(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Ship,DistantWorlds.Types.Design,CommunityPatch.SalvageOrders+Strip&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:PrepareShipComponentsForRetrofit(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Ship&,DistantWorlds.Types.Design,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.SalvageOrders:AfterStrip(DistantWorlds.Types.Ship,DistantWorlds.Types.Design,CommunityPatch.SalvageOrders+Strip)"
+    },
+    {
+      "target": "DistantWorlds.Types.Ship:CheckAutoAssignMission(DistantWorlds.Types.ShipMissionType,System.Int64,System.DateTime,DistantWorlds.Types.Design,DistantWorlds.Types.ShipHull,DistantWorlds.Types.ShipHullValues,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,DistantWorlds.Types.BattleTactics)",
+      "kind": "prefix",
+      "effect": "skips-original",
+      "why": "CommunityPatch CommunityPatch.SalvageOrders:KeepWorking(DistantWorlds.Types.Ship,DistantWorlds.Types.Empire,System.Boolean&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchProjectList:SelectRandomVisibleProject(DistantWorlds.Types.Galaxy,System.Random,DistantWorlds.Types.ComponentCategory,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.SalvageOrders:SelectedProject(DistantWorlds.Types.ResearchProjectList,DistantWorlds.Types.ResearchProject)"
+    },
+    {
+      "target": "DistantWorlds.Types.ResearchProjectList:SelectRandomVisibleProject(System.Random,System.Boolean)",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.SalvageOrders:SelectedProject(DistantWorlds.Types.ResearchProjectList,DistantWorlds.Types.ResearchProject)"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:DoTasks(System.Single,System.DateTime,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,System.Boolean)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.SalvageDismantle:EnterYard(DistantWorlds.Types.ConstructionSystem,DistantWorlds.Types.ConstructionSystem&)"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:DoTasks(System.Single,System.DateTime,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,DistantWorlds.Types.Location,System.Boolean)",
+      "kind": "finalizer",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.SalvageDismantle:LeaveYard(DistantWorlds.Types.ConstructionSystem)"
+    },
+    {
+      "target": "DistantWorlds.Types.ConstructionSystem:BuildShip(DistantWorlds.Types.Ship,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Boolean,DistantWorlds.Types.CargoList,DistantWorlds.Types.CargoList,System.Single,System.Single,System.Single,System.Single,System.Boolean&)",
+      "kind": "prefix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.SalvageDismantle:Repair(DistantWorlds.Types.Ship,DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire)"
+    },
+    {
+      "target": "DistantWorlds.UI.UserInterfaceController:SetActionButtonsFromTasks(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Object,DistantWorlds.Types.GameTask[],DistantWorlds.Types.GameTaskList[],DistantWorlds.UI.DWButton[])",
+      "kind": "postfix",
+      "effect": "observes",
+      "why": "CommunityPatch CommunityPatch.SalvagePanel:Bind(DistantWorlds.Types.Galaxy,DistantWorlds.Types.Empire,System.Object,DistantWorlds.Types.GameTask[],DistantWorlds.Types.GameTaskList[],DistantWorlds.UI.DWButton[])"
+    }
+  ]
+}

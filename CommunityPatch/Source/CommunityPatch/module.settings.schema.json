@@ -1,0 +1,104 @@
+{
+  "Cancellation Refunds": [
+    {
+      "key": "CancellationRefunds__Enabled",
+      "type": "bool",
+      "label": "Enable Cancellation Refunds",
+      "default": true,
+      "description": "Refunds the unused share of the recorded state payment when you cancel an eligible unfinished ship, station, facility or troop order. Turning this off stops the extra refund on future cancellations. Takes effect on the next game launch."
+    }
+  ],
+  "Colony Event Display Fix": [
+    {
+      "key": "ColonyEventDisplayFix__Enabled",
+      "type": "bool",
+      "label": "Enable Colony Event Display Fix",
+      "default": true,
+      "description": "Refreshes grouped colony-event tooltips when the contributing colonies change. For Breeding Worlds, shows each contribution and the empire-wide total. The underlying bonuses are calculated by the game. Takes effect on the next game launch."
+    }
+  ],
+  "Colony Support Rules": [
+    {
+      "key": "ColonySupportRules__Enabled",
+      "type": "bool",
+      "label": "Enable Colony Support Rules",
+      "default": true,
+      "description": "Residents under Exterminate generate no colony production or taxable income and incur 20% of their usual support share. Turning this off restores the game's normal income and support calculation. Takes effect on the next game launch."
+    }
+  ],
+  "Deep Space Stability and Refuel": [
+    {
+      "key": "DeepSpaceStability__Enabled",
+      "type": "bool",
+      "label": "Enable Deep Space Stability and Refuel",
+      "default": true,
+      "description": "Stabilizes the position of fleets holding in deep space and enables the two optional manual tanker-refuelling commands below. Turning this off also disables those commands and keeps your two choices for later. Takes effect on the next game launch."
+    }
+  ],
+  "Freight Visibility": [
+    {
+      "key": "FreightVisibility__Enabled",
+      "type": "bool",
+      "label": "Enable Freight Visibility",
+      "default": true,
+      "description": "Adds cargo aboard freighters, planned pickups and foreign carriers to resource tooltips. This changes the freight information shown. Delivery orders continue to follow their usual rules. Takes effect on the next game launch."
+    }
+  ],
+  "HyperDeny on Move": [
+    {
+      "key": "HyperDenyMove__Enabled",
+      "type": "bool",
+      "label": "Enable HyperDeny on Move",
+      "default": true,
+      "description": "Allows a player ship following a manual Move order to use HyperDeny against enemies at war. Turning this off restores normal HyperDeny behaviour during movement. Takes effect on the next game launch."
+    }
+  ],
+  "Inherited Ship Retirement": [
+    {
+      "key": "InheritedShipRetirement__Enabled",
+      "type": "bool",
+      "label": "Enable Inherited Ship Retirement",
+      "default": true,
+      "description": "After the conquest of an empire's last colony, eligible inherited mobile ships follow the receiving empire's Never enlist and Disassemble at Base policy. Civilian and military ships use their respective policies. Takes effect on the next game launch."
+    }
+  ],
+  "Racial Research Unlock": [
+    {
+      "key": "RacialResearchUnlock__Enabled",
+      "type": "bool",
+      "label": "Enable Racial Research Unlock",
+      "default": true,
+      "description": "Qualifies a race when at least 3 billion of its residents live on your empire's colonies. Its eligible racial technologies become available when their normal prerequisites are met. Turning this off stops this extra access. Research already completed stays completed. Takes effect on the next game launch."
+    }
+  ],
+  "Resource Intelligence": [
+    {
+      "key": "ResourceIntelligence__Enabled",
+      "type": "bool",
+      "label": "Enable Resource Intelligence",
+      "default": true,
+      "description": "Adds Buy resource intelligence in diplomacy. An empire or pirate faction can quote a price for a deposit known to the seller and undiscovered by your empire. Turning this off removes the purchase option. Takes effect on the next game launch."
+    }
+  ],
+  "Retirement Research Report": [
+    {
+      "key": "RetirementResearchReport__Enabled",
+      "type": "bool",
+      "label": "Enable Retirement Research Report",
+      "default": true,
+      "description": "Shows every research boost the game awards when your ship is disassembled at a base, including racial rewards. Lists the actual gain for each technology. This is a report only. Rewards, their amounts and their chances are unchanged. Takes effect on the next game launch."
+    }
+  ],
+  "Salvage and Refit": [
+    {
+      "key": "SalvageRefit__Enabled", "type": "bool", "label": "Enable Salvage and Refit", "default": true,
+      "description": "Adds a player order to study unfamiliar equipment and refit a ship or station to a compatible design. A constructor attends stations. Entire stations can also be dismantled. Enabled after restarting the game."
+    }
+  ],
+  "_enables": {
+    "DeepSpaceStability__Enabled": [
+      "DeepSpaceStability__RallyWhileRefuelling",
+      "DeepSpaceStability__QueueRefuelPoint"
+    ]
+  }
+}

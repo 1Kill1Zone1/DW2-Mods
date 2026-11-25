@@ -1,0 +1,108 @@
+{
+  "modules": [
+    {
+      "id": "FreightVisibility",
+      "name": "Freight Visibility",
+      "version": "0.1.1",
+      "dll": "FreightVisibility.dll",
+      "assembly": "FreightVisibility",
+      "entryPoint": "FreightVisibility.Entry.Init",
+      "sha256": "84F6F9AA849A6D32E04AFA837454CA6EB8DD9C47D7BCDB2D530393BF6F28A3FE",
+      "settings": []
+    },
+    {
+      "id": "HyperDenyMove",
+      "name": "HyperDeny on Move",
+      "version": "0.1.0",
+      "dll": "HyperDenyMove.dll",
+      "assembly": "HyperDenyMove",
+      "entryPoint": "HyperDenyMove.Entry.Init",
+      "sha256": "D2D4D521AF214070D042363B7FA9B41E6CE53950E578E4FD3FE833F42DAAF34B",
+      "settings": []
+    },
+    {
+      "id": "ResourceIntelligence",
+      "name": "Resource Intelligence",
+      "version": "0.1.3",
+      "dll": "ResourceIntelligence.dll",
+      "assembly": "ResourceIntelligence",
+      "entryPoint": "ResourceIntelligence.Entry.Init",
+      "sha256": "81A53B388A3C15D526B069FF0311FB87F9723F5DF8B2981551ACB874A6EC7ED1",
+      "settings": []
+    },
+    {
+      "id": "CancellationRefunds",
+      "name": "Cancellation Refunds",
+      "version": "0.2.0",
+      "dll": "CancellationRefunds.dll",
+      "assembly": "CancellationRefunds",
+      "entryPoint": "CancellationRefunds.Entry.Init",
+      "sha256": "0982BC6676D6BC91A7D6EE187960760E63E57A424089507BF884518B5CBB1005",
+      "settings": []
+    },
+    {
+      "id": "InheritedShipRetirement",
+      "name": "Inherited Ship Retirement",
+      "version": "0.1.1",
+      "dll": "InheritedShipRetirement.dll",
+      "assembly": "InheritedShipRetirement",
+      "entryPoint": "InheritedShipRetirement.Entry.Init",
+      "sha256": "82910C7839F227F0383EC936CB209C99423E6FBB532B100C57929A688319343B",
+      "settings": []
+    },
+    {
+      "id": "RacialResearchUnlock",
+      "name": "Racial Research Unlock",
+      "version": "0.2.1",
+      "dll": "RacialResearchUnlock.dll",
+      "assembly": "RacialResearchUnlock",
+      "entryPoint": "RacialResearchUnlock.Entry.Init",
+      "sha256": "12F8D2A77F0F30E30345F637970F27F2592BBE3FB6D2D3FEB1344C5141699AF4",
+      "settings": []
+    },
+    {
+      "id": "DeepSpaceStability",
+      "name": "Deep Space Stability and Refuel",
+      "version": "0.3.0",
+      "dll": "DeepSpaceStability.dll",
+      "assembly": "DeepSpaceStability",
+      "entryPoint": "DeepSpaceStability.Entry.InitWithOptions",
+      "sha256": "041213CE7046E163393CD77D3823006C4872A5810CB9328FBBC81578A3FAC115",
+      "settings": [
+        "RallyWhileRefuelling",
+        "QueueRefuelPoint"
+      ]
+    },
+    {
+      "id": "ColonySupportRules",
+      "name": "Colony Support Rules",
+      "version": "0.1.1",
+      "dll": "ColonySupportRules.dll",
+      "assembly": "ColonySupportRules",
+      "entryPoint": "ColonySupportRules.Entry.Init",
+      "sha256": "633FF0D554F056BEBD4678C862866CC506B2F237CE1AA8CCF54BC0517825C465",
+      "settings": []
+    },
+    {
+      "id": "ColonyEventDisplayFix",
+      "name": "Colony Event Display Fix",
+      "version": "0.1.1",
+      "dll": "ColonyEventDisplayFix.dll",
+      "assembly": "ColonyEventDisplayFix",
+      "entryPoint": "ColonyEventDisplayFix.Entry.Init",
+      "sha256": "7D4D3A7AA439C181D16C0E579A62FFEA67FCFB34CE5457E4001EFE159C51BE6F",
+      "settings": []
+    },
+    {
+      "id": "RetirementResearchReport",
+      "name": "Retirement Research Report",
+      "version": "0.1.1",
+      "dll": "RetirementResearchReport.dll",
+      "assembly": "RetirementResearchReport",
+      "entryPoint": "RetirementResearchReport.Entry.Init",
+      "sha256": "A0466148EA71146A2ED8CD3F3F2AF4409B57169824AEE096A3CD82C6A09F4D56",
+      "settings": []
+    }
+  ],
+  "engineSha256": "62F03F35A7EE8BBC7BF93AC7D184D614209631A4F68C488224E6CE9C9E2A0E23"
+}
